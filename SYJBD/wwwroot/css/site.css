@@ -1,0 +1,147 @@
+﻿/* ==== Layout general (headers, footer, contenido) ==== */
+
+/* Header 1: Marca (degradado, sticky) */
+.header-top {
+    background: linear-gradient(45deg, #1e3a8a, #7c3aed);
+    position: sticky;
+    top: 0;
+    z-index: 1040;
+    padding: 14px 0; /* altura natural con padding */
+    display: flex;
+    align-items: center;
+}
+
+    .header-top .container {
+        display: flex;
+        justify-content: center; /* centra el título */
+    }
+
+/* Header 2: Navegación (sticky y centrado) */
+.header-nav {
+    background: #f7f7fb;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+    position: sticky;
+    top: 0; /* se apila justo debajo del top sticky */
+    z-index: 1035;
+    padding: 8px 0;
+    display: flex;
+    align-items: center;
+}
+
+    .header-nav .container {
+        display: flex;
+        justify-content: center; /* botones centrados */
+        gap: .5rem;
+    }
+
+/* Botón de navegación */
+.nav-btn {
+    font-weight: 700;
+    letter-spacing: .5px;
+    border-radius: 999px;
+    background: #e9eaf5;
+    color: #3b3b55;
+    padding: .35rem .9rem;
+    border: none;
+}
+
+    .nav-btn:hover {
+        filter: brightness(0.96);
+    }
+
+    .nav-btn.active {
+        background: #3b82f6;
+        color: #fff;
+    }
+
+/* Footer fijo (degradado) */
+.footer-fixed {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 48px;
+    background: linear-gradient(45deg, #2c3e50, #bdc3c7);
+    z-index: 1030;
+}
+
+    .footer-fixed .container {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+/* Espacios para que nada quede oculto por el footer.
+   Arriba ya no sumamos por headers (son sticky, ocupan su lugar). */
+.content-wrap {
+    padding-top: 12px;
+    padding-bottom: 64px; /* 48px del footer + holgura */
+}
+
+/* ==== Panel (card) que envuelve la tabla ==== */
+.card-panel {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,.06);
+    padding: 16px 16px 8px;
+    margin-bottom: 16px;
+}
+
+.content-wrap > .card-panel:first-child {
+    margin-top: 0;
+}
+/* evita salto arriba */
+.table-card .table {
+    margin-bottom: 0;
+}
+
+/* ==== Tabla ==== */
+.table thead th {
+    white-space: nowrap;
+}
+
+/* ==== Paginación (estética bootstrappy) ==== */
+.pagination .page-item .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+/* ==== Buscador ==== */
+.input-group .form-control::placeholder {
+    color: #9aa0b5;
+}
+
+/* ==== Responsivo ==== */
+@media (max-width: 576px) {
+    .header-top {
+        padding: 10px 0;
+    }
+
+    .header-nav {
+        padding: 6px 0;
+    }
+
+    .content-wrap {
+        padding-top: 8px;
+        padding-bottom: 70px;
+    }
+
+    .card-panel {
+        border-radius: 10px;
+        padding: 12px 12px 6px;
+    }
+
+    h1, .header-top h1 {
+        font-size: 1.35rem;
+    }
+
+    h2 {
+        font-size: 1.1rem;
+    }
+}
