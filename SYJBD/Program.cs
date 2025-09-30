@@ -7,27 +7,38 @@ using SYJBD.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1) EF Core MySQL (usa Pomelo)
-var cs = builder.Configuration.GetConnectionString("Default");
-builder.Services.AddDbContext<ErpDbContext>(opt =>
-    opt.UseMySql(cs, ServerVersion.AutoDetect(cs)));
-// Paquete NuGet necesario:
-// Pomelo.EntityFrameworkCore.MySql
+// ----------------------------------------------------
+// 1) EF Core + MySQL (Pomelo)
+// ----------------------------------------------------
+var cs = builder.Configuration.GetConnectionString("Default")
+         ?? throw new InvalidOperationException(
+             "Falta ConnectionStrings:Default en appsettings.json");
 
-// 2) MVC con política global: requiere login salvo [AllowAnonymous]
-builder.Services.AddControllersWithViews(opt =>
+builder.Services.AddDbContext<ErpDbContext>(opt =>
+{
+    // AutoDetect obtiene la versión de MySQL/MariaDB para configurar el provider
+    opt.UseMySql(cs, ServerVersion.AutoDetect(cs));
+});
+
+// ----------------------------------------------------
+// 2) MVC con política global de autorización
+//    (todo requiere login, excepto [AllowAnonymous])
+// ----------------------------------------------------
+builder.Services.AddControllersWithViews(options =>
 {
     var policy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .Build();
-    opt.Filters.Add(new AuthorizeFilter(policy));
+    options.Filters.Add(new AuthorizeFilter(policy));
 });
 
-// 3) Cookies de autenticación
+// ----------------------------------------------------
+// 3) Autenticación por Cookies
+// ----------------------------------------------------
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(opt =>
     {
-        opt.LoginPath = "/Auth/Login";
+        opt.LoginPath = "/Auth/Login";     // pantalla de login
         opt.AccessDeniedPath = "/Auth/Denied";
         opt.SlidingExpiration = true;
         opt.ExpireTimeSpan = TimeSpan.FromHours(8);
@@ -36,12 +47,18 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 
-// 4) DI
+// ----------------------------------------------------
+// 4) Inyección de dependencias (solo lo que usas hoy)
+//    *No* registramos servicios de Cajas/POS.
+// ----------------------------------------------------
 builder.Services.AddScoped<UsersRepository>();
 builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
 
+// ----------------------------------------------------
+// 5) Middleware pipeline
+// ----------------------------------------------------
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -56,7 +73,11 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Ruta por defecto ? Login
+// ----------------------------------------------------
+// 6) Rutas
+//    - Ruta por defecto: muestra el Login.
+//    - Sin alias /Ventas/PuntoDeVenta (lo eliminamos).
+// ----------------------------------------------------
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Auth}/{action=Login}/{id?}");

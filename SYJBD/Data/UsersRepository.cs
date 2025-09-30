@@ -7,26 +7,32 @@ namespace SYJBD.Data
     public class UsersRepository
     {
         private readonly string _cs;
-        public UsersRepository(IConfiguration cfg) => _cs = cfg.GetConnectionString("Default")!;
 
-        // SYJBD.Data.UsersRepository.cs
+        public UsersRepository(IConfiguration cfg)
+        {
+            _cs = cfg.GetConnectionString("Default")
+                  ?? throw new InvalidOperationException("ConnectionStrings:Default no configurada.");
+        }
 
+        /// <summary>
+        /// Valida credenciales por id_usuario o correo (texto plano, igual que tu BD actual).
+        /// </summary>
         public async Task<User?> ValidateAsync(string userOrEmail, string password)
         {
             const string sql = @"
-        SELECT id_usuario, nombre, apellido, correo, rol
-        FROM code_sj_db.Usuarios
-        WHERE (id_usuario = @u OR correo = @u) AND contraseña = @p
-        LIMIT 1;";
+SELECT id_usuario, nombre, apellido, correo, rol
+FROM Usuarios
+WHERE (id_usuario = @u OR correo = @u) AND contraseña = @p
+LIMIT 1;";
 
-            using var cn = new MySqlConnection(_cs);
+            await using var cn = new MySqlConnection(_cs);
             await cn.OpenAsync();
 
-            using var cmd = new MySqlCommand(sql, cn);
+            await using var cmd = new MySqlCommand(sql, cn);
             cmd.Parameters.AddWithValue("@u", userOrEmail);
             cmd.Parameters.AddWithValue("@p", password);
 
-            using var rd = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow);
+            await using var rd = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow);
             if (!await rd.ReadAsync()) return null;
 
             return new User
@@ -39,21 +45,24 @@ namespace SYJBD.Data
             };
         }
 
+        /// <summary>
+        /// Obtiene un usuario por ID.
+        /// </summary>
         public async Task<User?> GetByIdAsync(string id)
         {
             const string sql = @"
-        SELECT id_usuario, nombre, apellido, correo, rol
-        FROM code_sj_db.Usuarios
-        WHERE id_usuario = @id
-        LIMIT 1;";
+SELECT id_usuario, nombre, apellido, correo, rol
+FROM Usuarios
+WHERE id_usuario = @id
+LIMIT 1;";
 
-            using var cn = new MySqlConnection(_cs);
+            await using var cn = new MySqlConnection(_cs);
             await cn.OpenAsync();
 
-            using var cmd = new MySqlCommand(sql, cn);
+            await using var cmd = new MySqlCommand(sql, cn);
             cmd.Parameters.AddWithValue("@id", id);
 
-            using var rd = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow);
+            await using var rd = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow);
             if (!await rd.ReadAsync()) return null;
 
             return new User
@@ -65,6 +74,5 @@ namespace SYJBD.Data
                 Rol = rd.IsDBNull(rd.GetOrdinal("rol")) ? null : rd.GetString("rol"),
             };
         }
-
     }
 }

@@ -7,18 +7,21 @@
     var ctrl = (ViewContext.RouteData.Values["controller"]?.ToString() ?? "").ToLower();
     var act = (ViewContext.RouteData.Values["action"]?.ToString() ?? "").ToLower();
 
-    // Helpers de estado activo/expandido
+    // Helpers
     Func<string, string?, string> active = (c, a) =>
         ctrl == c.ToLower() && (a == null || act == a.ToLower()) ? "active" : "";
-
     Func<string[], bool> sectionOpen = (controllers) =>
         controllers.Select(x => x.ToLower()).Contains(ctrl);
 
-    // Grupos de controladores por sección
     var ventasCtrls = new[] { "ventas", "clientes" };
     var gastosCtrls = new[] { "gastos" };
     var productosCtrls = new[] { "productos", "categorias", "tallastipo", "tipos", "unidades", "dimensiones" };
+
+    // === AÑADIDOS MÍNIMOS (corregido) ===
+    var path = (ViewContext?.HttpContext?.Request?.Path.Value ?? "").ToLower();
+    bool forceVentasOpen = path.Contains("/ventas/puntodeventa");
 }
+
 
 <nav class="sidebar" id="sidebar" aria-label="Navegación principal">
     <div class="logo">
@@ -35,7 +38,8 @@
 
     <!-- VENTAS -->
     @{
-        bool ventasOpen = sectionOpen(ventasCtrls);
+        // === CAMBIO MINIMO: abrimos Ventas también cuando la URL es /Ventas/PuntoDeVenta
+        bool ventasOpen = forceVentasOpen || sectionOpen(ventasCtrls);
     }
     <div class="nav-section @(ventasOpen ? "open" : "")" data-section="ventas">
         <button class="nav-btn" type="button" aria-expanded="@(ventasOpen ? "true" : "false")">
@@ -43,7 +47,10 @@
             <i class="bi bi-chevron-down"></i>
         </button>
         <div class="nav-sub" style="@(ventasOpen ? "" : "display:none")">
-            <a class="nav-link @active("ventas", "puntodeventa")" asp-controller="Ventas" asp-action="PuntoDeVenta">
+            <!-- Punto de venta => mantiene tu ruta /Ventas/PuntoDeVenta  -->
+            <!-- === CAMBIO MINIMO: si path es /ventas/puntodeventa forzamos "active" visual -->
+            <a class="nav-link @(active("ventas", "puntodeventa") + (path.Contains("/ventas/puntodeventa") ? " active" : ""))"
+               asp-controller="Ventas" asp-action="PuntoDeVenta">
                 <i class="bi bi-basket"></i><span>Punto de venta</span>
             </a>
             <a class="nav-link @active("ventas", "index")" asp-controller="Ventas" asp-action="Index">
@@ -119,7 +126,6 @@
                 <a class="nav-link @active("unidades", "index")" asp-controller="Unidades" asp-action="Index">
                     <i class="bi bi-rulers"></i><span>Unidades</span>
                 </a>
-                <!-- Si ya trabajas Dimensiones, queda listo -->
                 <a class="nav-link @active("dimensiones", "index")" asp-controller="Dimensiones" asp-action="Index">
                     <i class="bi bi-aspect-ratio"></i><span>Dimensiones</span>
                 </a>
