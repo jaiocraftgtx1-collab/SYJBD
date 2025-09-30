@@ -1,147 +1,917 @@
-﻿/* ==== Layout general (headers, footer, contenido) ==== */
+﻿/* ====================================================================
+   SVJ STYLE - site.css (versión unificada y comentada)
+   ====================================================================
 
-/* Header 1: Marca (degradado, sticky) */
-.header-top {
-    background: linear-gradient(45deg, #1e3a8a, #7c3aed);
-    position: sticky;
-    top: 0;
-    z-index: 1040;
-    padding: 14px 0; /* altura natural con padding */
-    display: flex;
-    align-items: center;
+   BLOQUES:
+   01) Variables
+   02) Base / reset simple
+   03) Topbar (fijo)
+   04) Layout principal (main/content) + modo "sidebar-closed"
+   05) Sidebar (fijo + off-canvas)
+   06) Cards (sección Productos)
+   07) Tabla (contenedor, tabla, badges, paginación)
+   08) Footer (fijo)
+   09) Responsivo Tablet/Móvil (<=1024 y <=640)
+   10) Responsivo Desktop (>=1025)
+   11) Utilidades táctiles
+   ==================================================================== */
+
+
+/* ====================================================================
+   01) VARIABLES
+   ==================================================================== */
+:root {
+    /* Paleta */
+    --bg: #1f2b44; /* fondo sidebar */
+    --bg-2: #223052; /* matiz secundario */
+    --text: #eef3fb; /* texto sidebar */
+    --muted: #b8c4d6; /* texto suave */
+    --brand: #7b5cff; /* gradiente topbar (izq) */
+    --brand-2: #5a44d6; /* gradiente topbar (der) */
+    --accent: #22c55e; /* éxito */
+    --danger: #ef4444; /* error */
+    /* UI */
+    --shadow: 0 6px 18px rgba(0,0,0,.12);
+    --radius: 16px;
+    /* Alturas de elementos fijos */
+    --topbar: 70px; /* header morado fijo */
+    --footer: 56px; /* footer fijo */
+    /* Altos de header interno (título+buscador) */
+    --hdr-desktop: 56px;
+    --hdr-tablet: 72px;
+    --hdr-mobile: 92px;
 }
 
-    .header-top .container {
-        display: flex;
-        justify-content: center; /* centra el título */
-    }
 
-/* Header 2: Navegación (sticky y centrado) */
-.header-nav {
-    background: #f7f7fb;
-    border-bottom: 1px solid rgba(0,0,0,.06);
-    position: sticky;
-    top: 0; /* se apila justo debajo del top sticky */
-    z-index: 1035;
-    padding: 8px 0;
-    display: flex;
-    align-items: center;
+/* ====================================================================
+   02) BASE / RESET SIMPLE
+   ==================================================================== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
-    .header-nav .container {
-        display: flex;
-        justify-content: center; /* botones centrados */
-        gap: .5rem;
+html, body {
+    height: 100%;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: #fff;
+    color: #1f2937;
+    font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+    line-height: 1.4;
+}
+
+/* Estados de enfoque visibles y consistentes */
+:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+/* Utilidad: oculto accesible */
+.d-none {
+    display: none !important;
+}
+
+/* ====================================================================
+   03) TOPBAR (FIJO)
+   ==================================================================== */
+.topbar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 1100;
+    height: var(--topbar);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    color: #fff;
+    box-shadow: 0 1px 0 rgba(0,0,0,.05);
+}
+
+    .topbar .container-fluid {
+        height: 100%;
     }
 
-/* Botón de navegación */
+.btn-toggle-sidebar {
+    border: 0;
+    background: transparent;
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .btn-toggle-sidebar:hover {
+        background: rgba(255,255,255,.12);
+    }
+/* ícono seguro */
+.topbar .bi::before {
+    font-family: "bootstrap-icons" !important;
+}
+
+/* ====================================================================
+   04) LAYOUT PRINCIPAL (main/content) + modo "sidebar-closed"
+   Nota: tu _Layout usa <main class="main"> y <div class="content">.
+   Para compatibilidad previa, incluimos alias para .main-content.
+   ==================================================================== */
+.main,
+.main-content { /* alias */
+    display: block;
+    padding-top: var(--topbar);
+    padding-bottom: var(--footer);
+    padding-left: 270px; /* reserva para sidebar fijo en desktop */
+    min-height: calc(100dvh - var(--footer));
+}
+
+.content {
+    padding: 22px;
+}
+
+/* En pantallas pequeñas el padding-left lo controla el off-canvas */
+@media (max-width:1024px) {
+    .main,
+    .main-content {
+        padding-left: 0;
+    }
+}
+
+/* Toggle manual del sidebar (funciona en cualquier ancho) */
+body.sidebar-closed .sidebar {
+    transform: translateX(-100%);
+}
+
+body.sidebar-closed .main,
+body.sidebar-closed .main-content {
+    padding-left: 22px;
+}
+/* colchón cuando está cerrado */
+
+/* === Mejora: suavizar el margen superior del primer bloque de contenido === */
+.main .content > *:first-child {
+    margin-top: 8px !important;
+}
+
+.main .content > .card:first-child {
+    margin-top: 6px !important;
+}
+
+.main .content {
+    padding-top: 16px;
+}
+
+
+/* ====================================================================
+   05) SIDEBAR (FIJO + OFF-CANVAS)
+   ==================================================================== */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: var(--topbar);
+    bottom: var(--footer);
+    width: 270px;
+    z-index: 1000;
+    background: var(--bg);
+    color: var(--text);
+    padding: 12px 12px 18px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+    .sidebar .logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        margin: 8px 8px 16px;
+    }
+
+    .sidebar .nav-section {
+        margin: 8px 0;
+    }
+
+    .sidebar .nav-title {
+        font-size: .95rem;
+        color: var(--muted);
+        padding: 10px 14px 6px 18px;
+    }
+
 .nav-btn {
-    font-weight: 700;
-    letter-spacing: .5px;
-    border-radius: 999px;
-    background: #e9eaf5;
-    color: #3b3b55;
-    padding: .35rem .9rem;
-    border: none;
+    width: 100%;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.10);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    cursor: pointer;
+    transition: background .15s ease,border-color .15s ease;
 }
 
     .nav-btn:hover {
-        filter: brightness(0.96);
+        background: rgba(255,255,255,.10);
     }
 
-    .nav-btn.active {
-        background: #3b82f6;
+    .nav-btn .left {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .nav-btn i {
+        width: 22px;
+        min-width: 22px;
+        text-align: center;
+        font-size: 1.05rem;
+        opacity: .95;
+    }
+
+    .nav-btn.open .bi-chevron-down {
+        transform: rotate(180deg);
+        transition: transform .2s ease;
+    }
+
+/* OJO: no uses display:none aquí; el JS controla max-height */
+.nav-sub {
+    display: block;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .25s ease;
+    margin: 8px 0 12px 0;
+    padding-left: 8px;
+    border-left: 2px solid rgba(255,255,255,.10);
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 12px;
+    margin: 6px 8px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text);
+    opacity: .96;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+    .nav-link:hover {
+        background: rgba(255,255,255,.10);
+    }
+
+    .nav-link.active {
+        background: rgba(123,92,255,.22);
+        border: 1px solid rgba(123,92,255,.38);
         color: #fff;
     }
 
-/* Footer fijo (degradado) */
-.footer-fixed {
+    .nav-link i {
+        width: 22px;
+        min-width: 22px;
+        text-align: center;
+        font-size: 1.05rem;
+        opacity: .95;
+    }
+
+/* === Forzar fuente de Bootstrap Icons (evita “cuadritos”) === */
+.sidebar .bi::before, .topbar .bi::before {
+    font-family: "bootstrap-icons" !important;
+    font-style: normal;
+    font-weight: normal !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+/* chevrón seguro */
+.sidebar .nav-btn .bi-chevron-down::before {
+    content: "\f282";
+}
+
+/* Off-canvas en móvil/tablet */
+@media (max-width:1024px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform .25s ease;
+    }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+    body.menu-open {
+        overflow: hidden;
+    }
+}
+
+/* ====================================================================
+   06) CARDS (SECCIÓN PRODUCTOS)
+   ==================================================================== */
+.card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1px solid #e5e7eb;
+    box-shadow: var(--shadow);
+    margin-left: 0; /* evita “pegado” al sidebar */
+}
+
+/* Header interno de la card */
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    min-height: var(--hdr-desktop);
+    background: #fff;
+    border-bottom: 1px solid #eef2f7;
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
+}
+
+.card-title {
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0;
+}
+
+/* Buscador dentro de la card-header */
+.search {
+    position: relative;
+    min-width: 260px;
+}
+
+    .search i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 16px;
+        color: #6b7280;
+    }
+
+    .search input {
+        width: 100%;
+        height: 38px;
+        padding: 9px 12px 9px 36px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        color: #111827;
+    }
+
+        .search input::placeholder {
+            color: #9aa4b2;
+        }
+/* ====================================================================
+   07) TABLA (contenedor, tabla, badges, paginación) – HÍBRIDO
+   - Ocupa 100% cuando alcanza
+   - Si el contenido supera el ancho, habilita pan horizontal
+   - Acciones compactas
+   ==================================================================== */
+
+/* Contenedor: pan horizontal/vertical fluido */
+.table-wrap {
+    position: relative;
+    padding: 0 10px 12px 10px;
+    overflow-x: auto; /* pan horizontal si hace falta */
+    overflow-y: visible; /* vertical lo maneja la página (desktop) */
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable both-edges;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 1px rgba(17,24,39,.03);
+}
+
+    /* hints de overflow (opcional; desactivados por defecto) */
+    .table-wrap::before,
+    .table-wrap::after {
+        content: none;
+    }
+
+/* Tabla real (modo híbrido):
+   - min-width:100% => llena el contenedor cuando puede
+   - width:max-content => si no alcanza, crece a su contenido y el wrap hace scroll */
+.table {
+    display: table !important;
+    min-width: 100% !important; /* al menos el ancho visible */
+    width: max-content !important; /* pero puede crecer si hay muchas columnas */
+    border-collapse: separate !important;
+    border-spacing: 0;
+    font-size: .96rem;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+    /* Thead */
+    .table thead {
+        display: table-header-group !important;
+    }
+
+        .table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #0f172a;
+            color: #e5e7eb;
+            font-weight: 700;
+            text-align: left;
+            padding: 12px 14px;
+            border-bottom: 1px solid #111827;
+            white-space: nowrap;
+            background-clip: padding-box;
+        }
+
+            .table thead th:first-child {
+                border-top-left-radius: 12px;
+                border-bottom-left-radius: 0;
+            }
+
+            .table thead th:last-child {
+                border-top-right-radius: 12px;
+                border-bottom-right-radius: 0;
+            }
+
+    /* Cuerpo */
+    .table tbody {
+        display: table-row-group !important;
+    }
+
+    .table tr {
+        display: table-row !important;
+    }
+
+    .table td, .table th {
+        display: table-cell !important;
+    }
+
+    .table tbody td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #eef2f7;
+        color: #374151;
+        white-space: nowrap; /* columnas compactas; el contenedor panea si excede */
+    }
+
+    .table tbody tr:hover td {
+        background: #f9fafb;
+    }
+
+    /* Columna Acciones: siempre compacta */
+    .table thead th:last-child,
+    .table tbody td:last-child {
+        width: 1%;
+        white-space: nowrap;
+    }
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: .72rem;
+    border: 1px solid transparent;
+}
+
+    .badge.ok {
+        background: #e8fff1;
+        color: #166534;
+        border-color: #bbf7d0;
+    }
+
+    .badge.danger {
+        background: #ffecec;
+        color: #991b1b;
+        border-color: #fecaca;
+    }
+
+/* Paginación */
+.pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+    .pager .btn, .pager .page {
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+    }
+
+        .pager .btn[aria-disabled="true"] {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .pager .page.active {
+            background: #eef2ff;
+            border-color: #c7d2fe;
+            font-weight: 700;
+        }
+
+/* Texto meta */
+.meta {
+    font-size: .85rem;
+    color: #6b7280;
+    text-align: center;
+    padding-bottom: 12px;
+}
+
+
+/* ====================================================================
+   08) FOOTER (FIJO)
+   ==================================================================== */
+.footer {
     position: fixed;
     left: 0;
     right: 0;
     bottom: 0;
-    height: 48px;
-    background: linear-gradient(45deg, #2c3e50, #bdc3c7);
-    z-index: 1030;
+    z-index: 1000;
+    height: var(--footer);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
 }
 
-    .footer-fixed .container {
-        height: 100%;
+/* ====================================================================
+   09) RESPONSIVO – Ajustes de tabla en ≤1024 y ≤640
+   - Mantiene el modo híbrido
+   - Acciones “a mano” (sticky a la derecha)
+   ==================================================================== */
+
+/* ≤1024px (tablet) */
+@media (max-width:1024px) {
+    /* el contenedor hace scroll vertical interno si la vista es corta */
+    .table-wrap {
+        max-height: calc(100dvh - var(--topbar) - var(--footer) - var(--hdr-tablet));
+        overflow-y: auto !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        font-size: .94rem;
+    }
+
+        .table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .table tbody td {
+            padding: 10px 12px;
+        }
+
+            /* Acciones pegadas a la derecha (quedan siempre visibles) */
+            .table thead th:last-child,
+            .table tbody td:last-child {
+                position: sticky;
+                right: 0;
+                z-index: 3;
+                background: #fff;
+            }
+
+        .table thead th:last-child {
+            background: #0f172a;
+            color: #e5e7eb;
+            z-index: 4;
+        }
+
+        .table tbody td:last-child {
+            box-shadow: -8px 0 12px rgba(0,0,0,.06);
+        }
+}
+
+/* ≤640px (móvil) */
+@media (max-width:640px) {
+
+    /* Header compacto: título + botón arriba, buscador debajo */
+    .card-header {
+        display: grid;
+        grid-template-columns: 1fr; /* una columna */
+        align-items: center;
+        gap: 10px;
+        min-height: var(--hdr-mobile);
+    }
+
+    .card-title {
+        font-size: 20px;
+        margin: 0;
+    }
+
+    .search {
+        order: 2;
+        min-width: 0;
+    }
+
+    .card-title, .header-row {
+        order: 1;
+    }
+
+    /* Contenedor con scroll vertical interno si hace falta */
+    .table-wrap {
+        max-height: calc(100dvh - var(--topbar) - var(--footer) - var(--hdr-mobile));
+        overflow-y: auto !important;
+        overflow-x: auto !important; /* permite pan horizontal si de verdad lo necesita */
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y pan-x;
+        overscroll-behavior: contain;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-bottom: 8px !important;
+        margin-bottom: 8px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+    }
+
+    /* Tabla en modo híbrido pero más pequeña */
+    .table {
+        min-width: 100% !important; /* llena el ancho disponible */
+        width: max-content !important; /* crece si las columnas exceden */
+        table-layout: auto !important;
+        font-size: .90rem;
+    }
+
+        .table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .table tbody td {
+            padding: 8px 10px;
+        }
+
+        /* Permite quiebre de texto en celdas largas (no en Acciones) */
+        .table thead th,
+        .table tbody td {
+            white-space: normal !important;
+            word-break: break-word;
+        }
+
+            /* Acciones: compactas y “a mano” pegadas a la derecha */
+            .table thead th:last-child,
+            .table tbody td:last-child {
+                position: sticky;
+                right: 0;
+                z-index: 3;
+                background: #fff;
+                white-space: nowrap !important; /* que no se partan los botones */
+                width: 1%;
+                box-shadow: -4px 0 8px rgba(0,0,0,.05); /* sombra más sutil */
+            }
+
+            .table thead th:last-child {
+                background: #0f172a;
+                color: #e5e7eb;
+                z-index: 4;
+                box-shadow: none;
+            }
+
+    /* Botones de acción aún más pequeños en móvil */
+    .table-actions {
+        gap: 6px;
+    }
+
+    .btn-xs {
+        padding: 5px 7px;
+        border-radius: 9px;
+    }
+
+    /* Paginación: respiro corto */
+    .pager {
+        margin-top: 6px !important;
+    }
+}/* ====================================================================
+   10) RESPONSIVO DESKTOP (≥1025px) – FULL-WIDTH TABLE
+   ==================================================================== */
+@media (min-width:1025px) {
+    /* Cabecera: título + buscador */
+    .card-header {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 16px;
+    }
+
+    .card-title {
+        font-size: 24px;
+    }
+
+    .search {
+        min-width: 0;
+    }
+
+        .search input {
+            height: 38px;
+        }
+
+    /* La card hasta el borde del content */
+    .content .card {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    /* El wrap NO fuerza scrollbar horizontal en desktop */
+    .table-wrap {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-bottom: 12px !important; /* <— quita el “bloque” bajo la tabla */
+        overflow-x: visible !important; /* que ocupe todo el ancho */
+    }
+
+    /* La tabla ocupa 100% y reparte ancho automáticamente
+    .table {
+        width: 100% !important;
+        min-width: 0 !important;
+        table-layout: auto !important;
+    } */
+
+        /* En desktop, permitir cortes de línea para adaptarse al ancho */
+        .table thead th, .table tbody td {
+            white-space: normal !important;
+        }
+
+            /* ID y Creado compactos en una línea */
+            .table thead th:nth-child(1),
+            .table tbody td:nth-child(1),
+            .table thead th:nth-child(8),
+            .table tbody td:nth-child(8) {
+                white-space: nowrap !important;
+                width: 1%;
+            }
+
+
+}
+
+
+/* ===== MODAL (centrado) ===== */
+.app-modal.hidden {
+    display: none;
+}
+
+.app-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.app-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(17,24,39,.55);
+    backdrop-filter: blur(1px);
+}
+
+.app-modal__box {
+    position: relative;
+    margin: 0;
+    width: min(640px, 92vw);
+    max-height: 90vh;
+    overflow: auto;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    outline: none;
+}
+
+.app-modal__close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    border: 0;
+    background: transparent;
+    font-size: 1rem;
+    opacity: .7;
+    cursor: pointer;
+}
+
+    .app-modal__close:hover {
+        opacity: 1;
+    }
+
+#app-modal-body {
+    padding: 18px 18px 14px;
+}
+
+
+/* ===== HEADER INDEX con botón Nuevo al lado ===== */
+.card-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+}
+
+    .card-header .header-row {
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 12px;
     }
 
-/* Espacios para que nada quede oculto por el footer.
-   Arriba ya no sumamos por headers (son sticky, ocupan su lugar). */
-.content-wrap {
-    padding-top: 12px;
-    padding-bottom: 64px; /* 48px del footer + holgura */
-}
-
-/* ==== Panel (card) que envuelve la tabla ==== */
-.card-panel {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0,0,0,.06);
-    padding: 16px 16px 8px;
-    margin-bottom: 16px;
-}
-
-.content-wrap > .card-panel:first-child {
-    margin-top: 0;
-}
-/* evita salto arriba */
-.table-card .table {
-    margin-bottom: 0;
-}
-
-/* ==== Tabla ==== */
-.table thead th {
-    white-space: nowrap;
-}
-
-/* ==== Paginación (estética bootstrappy) ==== */
-.pagination .page-item .page-link {
-    border-radius: 8px;
-    margin: 0 2px;
-}
-
-.pagination .page-item.active .page-link {
-    background-color: #3b82f6;
-    border-color: #3b82f6;
-}
-
-/* ==== Buscador ==== */
-.input-group .form-control::placeholder {
-    color: #9aa0b5;
-}
-
-/* ==== Responsivo ==== */
-@media (max-width: 576px) {
-    .header-top {
-        padding: 10px 0;
+    .card-header .card-title {
+        margin: 0;
     }
 
-    .header-nav {
-        padding: 6px 0;
+/* ===== ACCIONES: color con micro animación ===== */
+.table-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-xs {
+    padding: 6px 9px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+
+.btn-view {
+    color: #1d4ed8;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.btn-edit {
+    color: #92400e;
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.btn-del {
+    color: #991b1b;
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.btn-view:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37,99,235,.12);
+}
+
+.btn-edit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(217,119,6,.14);
+}
+
+.btn-del:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(220,38,38,.14);
+    filter: brightness(0.98);
+}
+
+/* Mobile: botones más cerca */
+@media (max-width: 520px) {
+    .table-actions {
+        gap: 6px;
     }
 
-    .content-wrap {
-        padding-top: 8px;
-        padding-bottom: 70px;
-    }
-
-    .card-panel {
-        border-radius: 10px;
-        padding: 12px 12px 6px;
-    }
-
-    h1, .header-top h1 {
-        font-size: 1.35rem;
-    }
-
-    h2 {
-        font-size: 1.1rem;
+    .btn-xs {
+        padding: 6px 8px;
     }
 }
+@media (max-width:520px) {
+    #app-modal-body {
+        padding: 14px;
+    }
+
+    .app-modal__box {
+        width: 96vw;
+    }
+}
+

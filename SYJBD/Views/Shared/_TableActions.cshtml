@@ -1,0 +1,25 @@
+﻿@model SYJBD.Models.TableActionsModel
+<div class="table-actions" style="display:flex; gap:8px;">
+    @if (!string.IsNullOrEmpty(Model.DetailsUrl))
+    {
+        <a href="@Model.DetailsUrl" class="btn btn-xs" title="Ver" aria-label="Ver"><i class="bi bi-eye"></i></a>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.EditUrl))
+    {
+        <a href="@Model.EditUrl" class="btn btn-xs" title="Editar" aria-label="Editar"><i class="bi bi-pencil-square"></i></a>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.DeleteUrl))
+    {
+        <form method="post" action="@Model.DeleteUrl" onsubmit="return confirm('¿Eliminar el registro?');" style="display:inline;">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-xs" title="Eliminar" aria-label="Eliminar"><i class="bi bi-trash"></i></button>
+        </form>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.PrintUrl))
+    {
+        <a href="@Model.PrintUrl" class="btn btn-xs" title="Imprimir" aria-label="Imprimir"><i class="bi bi-printer"></i></a>
+    }
+</div>

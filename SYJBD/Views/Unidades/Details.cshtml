@@ -1,0 +1,19 @@
+﻿@model SYJBD.Models.Unidad
+@{
+    ViewData["Title"] = "Detalle de unidad";
+}
+<div class="card">
+    <div class="card-header"><h2 class="card-title">@ViewData["Title"]</h2></div>
+    <div class="content" style="padding:16px;">
+        <dl class="row">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@Model.IdUnidad</dd>
+            <dt class="col-sm-3">Nombre</dt>
+            <dd class="col-sm-9">@Model.Nombre</dd>
+        </dl>
+        <div class="mt-3">
+            <a asp-action="Edit" asp-route-id="@Model.IdUnidad" class="btn btn-primary">Editar</a>
+            <a asp-action="Index" class="btn">Volver</a>
+        </div>
+    </div>
+</div>

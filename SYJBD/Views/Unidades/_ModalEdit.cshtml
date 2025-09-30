@@ -1,0 +1,24 @@
+﻿@model SYJBD.Models.Unidad
+@{
+    Layout = null;
+}
+<h3 class="mb-3">Editar unidad</h3>
+<form asp-action="EditModal" asp-route-id="@Model.IdUnidad" method="post">
+    @Html.AntiForgeryToken()
+    <div class="row g-3">
+        <div class="col-12 col-sm-4">
+            <label class="form-label">ID</label>
+            <input class="form-control" value="@Model.IdUnidad" disabled />
+            <input type="hidden" asp-for="IdUnidad" />
+        </div>
+        <div class="col-12 col-sm-8">
+            <label class="form-label">Nombre</label>
+            <input asp-for="Nombre" class="form-control" />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="mt-4 d-flex gap-2">
+        <button class="btn btn-primary"><i class="bi bi-check2"></i> Guardar</button>
+        <button type="button" class="btn btn-light" data-modal-close>Cancelar</button>
+    </div>
+</form>

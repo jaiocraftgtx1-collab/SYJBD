@@ -2,120 +2,163 @@
 
 @{
     ViewData["Title"] = "Productos";
-    var q = Model.Query ?? "";
+
+    // Query actual: primero lo que venga en el modelo, si no, desde la querystring ?q=
+    var q = Model?.Query;
+    if (string.IsNullOrWhiteSpace(q))
+    {
+        q = ViewContext?.HttpContext?.Request?.Query["q"].ToString() ?? "";
+    }
+
+    // Atajos null-safe para no romper el render si algo viene en null
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var totalItems = Model?.TotalItems ?? 0;
+    var items = Model?.Items ?? new List<SYJBD.Models.Producto>();
+    var hasPrev = Model?.HasPrev ?? (currentPage > 1);
+    var hasNext = Model?.HasNext ?? (currentPage < totalPages);
 }
 
-<div class="card-panel table-card">
+<div class="card">
+    <!-- CABECERA -->
+    <div class="card-header">
+        <h2 class="card-title">@ViewData["Title"]</h2>
 
-    <div class="d-flex align-items-center justify-content-between mb-2">
-        <h2 class="m-0">@ViewData["Title"]</h2>
-
-        <!-- Buscador: Enter filtra; vacío = lista todo -->
-        <form asp-controller="Productos" asp-action="Index" method="get" class="d-flex" role="search">
-            <div class="input-group">
-                <span class="input-group-text">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-                         class="bi bi-search" viewBox="0 0 16 16">
-                        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.85-3.85zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
-                    </svg>
-                </span>
-                <input name="q" value="@q" class="form-control" placeholder="Buscar por nombre y Enter..." />
-                @* Reinicia a página 1 siempre que busques *@
-                <input type="hidden" name="page" value="1" />
-            </div>
+        <!-- Buscador (Enter filtra; vacío = lista todo) -->
+        <form asp-controller="Productos" asp-action="Index" method="get" class="search" role="search">
+            <i class="bi bi-search" aria-hidden="true"></i>
+            <input type="search"
+                   name="q"
+                   value="@q"
+                   placeholder="Buscar por nombre y Enter"
+                   autocomplete="off"
+                   aria-label="Buscar productos por nombre" />
+            <input type="hidden" name="page" value="1" />  @* siempre vuelve a página 1 *@
         </form>
     </div>
 
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-dark">
+    <!-- TABLA -->
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Tipo</th>
-                    <th>Categoría</th>
-                    <th>Unidad</th>
-                    <th>Origen</th>
-                    <th>Estado</th>
-                    <th>Creado</th>
+                    <th scope="col">ID</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Categoría</th>
+                    <th scope="col">Unidad</th>
+                    <th scope="col">Origen</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Creado</th>
                 </tr>
             </thead>
+
             <tbody>
-                @foreach (var p in Model.Items)
+                @if (!items.Any())
                 {
                     <tr>
-                        <td>@p.IdProducto</td>
-                        <td class="fw-semibold">@p.Nombre</td>
-                        <td>@p.IdTipoProd</td>
-                        <td>@p.IdCategoria</td>
-                        <td>@p.IdUnidad</td>
-                        <td>@p.Origen</td>
-                        <td><span class="badge @(p.Estado == "ACTIVO" ? "bg-success" : "bg-secondary")">@p.Estado</span></td>
-                        <td>@p.FechaCrea?.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            No hay resultados.
+                        </td>
                     </tr>
+                }
+                else
+                {
+                    foreach (var p in items)
+                    {
+                        <tr>
+                            <td data-label="ID">@p.IdProducto</td>
+                            <td data-label="Nombre" class="col-nombre fw-semibold">@p.Nombre</td>
+                            <td data-label="Tipo">@p.IdTipoProd</td>
+                            <td data-label="Categoría">@p.IdCategoria</td>
+                            <td data-label="Unidad">@p.IdUnidad</td>
+                            <td data-label="Origen">@p.Origen</td>
+                            <td data-label="Estado">
+                                @{
+                                    var estado = (p.Estado ?? "").ToUpperInvariant();
+                                    var ok = estado == "ACTIVO";
+                                }
+                                <span class="badge @(ok ? "ok" : "danger")">@estado</span>
+                            </td>
+                            <td data-label="Creado">
+                                @p.FechaCrea?.ToString("yyyy-MM-dd HH:mm")
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
     </div>
 
-    <!-- Paginación -->
-    @if (Model.TotalPages > 1)
+    <!-- PAGINACIÓN -->
+    @if (totalPages > 1)
     {
-        <nav aria-label="Paginación" class="mt-3">
-            <ul class="pagination justify-content-center">
+        <nav aria-label="Paginación" class="pager">
+            <!-- Anterior -->
+            @if (hasPrev)
+            {
+                <a class="btn"
+                   asp-action="Index" asp-route-q="@q" asp-route-page="@(currentPage - 1)">
+                    Anterior
+                </a>
+            }
+            else
+            {
+                <span class="btn" aria-disabled="true">Anterior</span>
+            }
 
-                <li class="page-item @(Model.HasPrev ? "" : "disabled")">
-                    <a class="page-link"
-                       asp-action="Index"
-                       asp-route-q="@q"
-                       asp-route-page="@(Model.Page - 1)">Anterior</a>
-                </li>
+            @{
+                // ventana de 5 páginas alrededor de la actual
+                int start = Math.Max(1, currentPage - 2);
+                int end = Math.Min(totalPages, currentPage + 2);
 
-                @* Para no listar 1..N si N es muy grande, mostramos ventana [-2,+2] *@
-                @{
-                    int start = System.Math.Max(1, Model.Page - 2);
-                    int end = System.Math.Min(Model.TotalPages, Model.Page + 2);
-                    if (start > 1)
+                if (start > 1)
+                {
+                    <a class="page @(currentPage == 1 ? "active" : "")"
+                       asp-action="Index" asp-route-q="@q" asp-route-page="1">1</a>
+                    if (start > 2)
                     {
-                        <li class="page-item">
-                            <a class="page-link" asp-action="Index" asp-route-q="@q" asp-route-page="1">1</a>
-                        </li>
-                        if (start > 2)
-                        {
-                            <li class="page-item disabled"><span class="page-link">…</span></li>
-                            ;
-                        }
-                    }
-                    for (int i = start; i <= end; i++)
-                    {
-                        <li class="page-item @(i == Model.Page ? "active" : "")">
-                            <a class="page-link" asp-action="Index" asp-route-q="@q" asp-route-page="@i">@i</a>
-                        </li>
-                    }
-                    if (end < Model.TotalPages)
-                    {
-                        if (end < Model.TotalPages - 1)
-                        {
-                            <li class="page-item disabled"><span class="page-link">…</span></li>
-                            ;
-                        }
-                        <li class="page-item">
-                            <a class="page-link" asp-action="Index" asp-route-q="@q" asp-route-page="@Model.TotalPages">@Model.TotalPages</a>
-                        </li>
+
+                        <span class="page" aria-hidden="true">…</span>
+                        ;
                     }
                 }
 
-                <li class="page-item @(Model.HasNext ? "" : "disabled")">
-                    <a class="page-link"
-                       asp-action="Index"
-                       asp-route-q="@q"
-                       asp-route-page="@(Model.Page + 1)">Siguiente</a>
-                </li>
+                for (int i = start; i <= end; i++)
+                {
+                    <a class="page @(i == currentPage ? "active" : "")"
+                       asp-action="Index" asp-route-q="@q" asp-route-page="@i">@i</a>
+                }
 
-            </ul>
-            <div class="text-center text-muted small">
-                Mostrando @Model.Items.Count de @Model.TotalItems ítems · Página @Model.Page de @Model.TotalPages
-            </div>
+                if (end < totalPages)
+                {
+                    if (end < totalPages - 1)
+                    {
+
+                        <span class="page" aria-hidden="true">…</span>
+                        ;
+                    }
+                    <a class="page @(currentPage == totalPages ? "active" : "")"
+                       asp-action="Index" asp-route-q="@q" asp-route-page="@totalPages">@totalPages</a>
+                }
+            }
+
+            <!-- Siguiente -->
+            @if (hasNext)
+            {
+                <a class="btn"
+                   asp-action="Index" asp-route-q="@q" asp-route-page="@(currentPage + 1)">
+                    Siguiente
+                </a>
+            }
+            else
+            {
+                <span class="btn" aria-disabled="true">Siguiente</span>
+            }
         </nav>
     }
+
+    <div class="meta">
+        Mostrando @items.Count de @totalItems ítems · Página @currentPage de @totalPages
+    </div>
 </div>

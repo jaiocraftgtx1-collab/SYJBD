@@ -1,0 +1,15 @@
+﻿@model SYJBD.Models.Unidad
+
+<div class="grid gap-3" style="display:grid; grid-template-columns: repeat(2,minmax(0,1fr));">
+    <div>
+        <label>ID (corto)</label>
+        <input asp-for="IdUnidad" class="form-control" />
+        <small class="hint">Ej.: UND, PAR, DOC, SET. Máx. 10 caracteres.</small>
+        <span asp-validation-for="IdUnidad" class="text-danger"></span>
+    </div>
+    <div>
+        <label>Nombre</label>
+        <input asp-for="Nombre" class="form-control" />
+        <span asp-validation-for="Nombre" class="text-danger"></span>
+    </div>
+</div>

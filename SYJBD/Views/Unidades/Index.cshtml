@@ -1,0 +1,94 @@
+﻿@model SYJBD.Models.PagedResult<SYJBD.Models.Unidad>
+@{
+    ViewData["Title"] = "Unidades";
+    var q = (string?)ViewData["q"] ?? "";
+}
+
+<div class="card">
+    <div class="card-header">
+        <div class="header-row">
+            <h2 class="card-title">@ViewData["Title"]</h2>
+            <a class="btn btn-primary"
+               data-modal-url="@Url.Action("CreateModal", "Unidades")">
+                <i class="bi bi-plus"></i> Nueva
+            </a>
+        </div>
+
+        <form asp-action="Index" method="get" class="search" role="search">
+            <i class="bi bi-search"></i>
+            <input name="q" value="@q" placeholder="Buscar por ID o nombre" autocomplete="off" />
+            <input type="hidden" name="page" value="1" />
+        </form>
+    </div>
+
+
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width:120px;">ID</th>
+          <th>Nombre</th>
+          <th style="width:1%; white-space:nowrap;">Acciones</th>
+        </tr>
+      </thead>
+            <tbody>
+                @foreach (var u in Model.Items)
+                {
+                    <tr>
+                        <td>@u.IdUnidad</td>
+                        <td>@u.Nombre</td>
+                        <td class="text-end">
+                            <div class="table-actions">
+                                <a class="btn btn-xs btn-view" title="Ver" aria-label="Ver"
+                                   data-modal-url="@Url.Action("DetailsModal", new { id = u.IdUnidad })">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a class="btn btn-xs btn-edit" title="Editar" aria-label="Editar"
+                                   data-modal-url="@Url.Action("EditModal", new { id = u.IdUnidad })">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <a class="btn btn-xs btn-del" title="Eliminar" aria-label="Eliminar"
+                                   data-modal-url="@Url.Action("DeleteModal", new { id = u.IdUnidad })">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+
+    </table>
+
+    <div class="pager pager--sticky">
+      <button class="btn" aria-disabled="@(Model.Page==1)" onclick="goPage(@(Model.Page-1))">Anterior</button>
+
+      @for (var p = Math.Max(1, Model.Page-1); p <= Math.Min(Model.TotalPages, Model.Page+1); p++)
+      {
+          <button class="page @(p==Model.Page ? "active" : "")" onclick="goPage(@p)">@p</button>
+      }
+      @if(Model.TotalPages> (Model.Page+1))
+      {
+          <span class="page">…</span>
+          <button class="page" onclick="goPage(@Model.TotalPages)">@Model.TotalPages</button>
+      }
+
+      <button class="btn" aria-disabled="@(Model.Page==Model.TotalPages)" onclick="goPage(@(Model.Page+1))">Siguiente</button>
+    </div>
+  </div>
+
+  <div class="meta">
+    Mostrando @Model.Items.Count de @Model.TotalItems ítems · Página @Model.Page de @Model.TotalPages
+  </div>
+</div>
+
+@section Scripts{
+<script>
+  function goPage(p){
+    const f = document.querySelector('.card-header form.search');
+    if(!f) return;
+    f.querySelector('input[name="page"]').value = p;
+    f.submit();
+  }
+</script>
+}

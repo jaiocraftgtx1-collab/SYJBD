@@ -1,49 +1,76 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Antiforgery
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IAntiforgery Antiforgery
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SYJBD</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - SVJ STYLE</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    @{
+        var tokens = Antiforgery.GetAndStoreTokens(HttpContextAccessor.HttpContext!);
+    }
+    <meta name="csrf-token" content="@tokens.RequestToken" />
+
+    <!-- Preload de la fuente de Bootstrap Icons para evitar “cuadritos” -->
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+          href="~/lib/bootstrap-icons/font/fonts/bootstrap-icons.woff2" />
+
+    <!-- CSS base -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
+    <!-- Bootstrap Icons (local) -->
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.css" asp-append-version="true" />
+    <!-- Fallback CDN si por alguna razón no existe el archivo local -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+          onload="document.documentElement.classList.add('bi-cdn-ok')">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    @RenderSection("Styles", required: false)
 </head>
-<body>
+<body class="has-sidebar">
+    <!-- Sidebar -->
+    @await Html.PartialAsync("_Sidebar")
 
-    <!-- Header 1: marca (fijo) -->
-    <header class="header-top">
-        <div class="container">
-            <h1 class="m-0 fw-bold text-white">SYJ STYLE</h1>
+    <!-- Topbar -->
+    <header class="topbar" style="background:linear-gradient(90deg,#6b46ff,#7c3aed);">
+        <div class="container-fluid d-flex align-items-center justify-content-between">
+            <button id="sidebarToggle" class="btn-toggle-sidebar" aria-label="Abrir menú" aria-controls="sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="fw-semibold brand text-white">IMPORT. Y EXPORT. S&J STYLE</div>
+            <div class="d-flex align-items-center gap-2 text-white">
+                <i class="bi bi-person-circle"></i>
+                <span>@User.Identity?.Name</span>
+            </div>
         </div>
     </header>
 
-    <!-- Header 2: navegación (fijo y centrado) -->
-    @{
-        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
-    }
-    <nav class="header-nav">
-        <div class="container gap-2">
-            <a asp-controller="Productos" asp-action="Index"
-               class="btn nav-btn @(currentController == "Productos" ? "active" : "")">
-                PRODUCTOS
-            </a>
-            @* aquí podrás agregar más botones en el futuro *@
-        </div>
-    </nav>
-
     <!-- Contenido -->
-    <main class="container content-wrap">
-        @RenderBody()
-    </main>
-
-    <!-- Footer fijo -->
-    <footer class="footer-fixed">
-        <div class="container text-center text-white-50 py-3">
-            © 2025 SYJ STYLE
+    <main class="main">
+        <div class="content">
+            @RenderBody()
         </div>
+    </main>
+    @await Html.PartialAsync("~/Views/Shared/_ModalHost.cshtml")
+    <div id="app-modal" class="app-modal hidden" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="app-modal__backdrop" data-modal-close></div>
+        <div class="app-modal__box" role="document" tabindex="-1">
+            <button type="button" class="app-modal__close" title="Cerrar" aria-label="Cerrar" data-modal-close>
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div id="app-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">© @DateTime.Now.Year SVJ STYLE</div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>
