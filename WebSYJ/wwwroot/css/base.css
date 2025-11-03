@@ -1,0 +1,35 @@
+﻿:root {
+    --header-h: 64px;
+    --footer-h: 48px;
+    --bg: #ffffff;
+    --ink: #222;
+    --ink-weak: #666;
+    --brand: #7c3aed;
+    --border: #e5e7eb;
+}
+
+* {
+    box-sizing: border-box
+}
+
+html, body {
+    height: 100%
+}
+
+    body.syj {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial
+    }
+
+.syj-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px
+}
+
+a {
+    color: inherit;
+    text-decoration: none
+}
