@@ -30,7 +30,7 @@
             <input type="search"
                    name="q"
                    value="@q"
-                   placeholder="Buscar por nombre y Enter"
+                   placeholder="Buscar..."
                    autocomplete="off"
                    aria-label="Buscar productos por nombre" />
             <input type="hidden" name="page" value="1" />  @* siempre vuelve a página 1 *@
@@ -40,27 +40,11 @@
     <!-- TABLA -->
     <div class="table-wrap">
         <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">ID</th>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Tipo</th>
-                    <th scope="col">Categoría</th>
-                    <th scope="col">Unidad</th>
-                    <th scope="col">Origen</th>
-                    <th scope="col">Estado</th>
-                    <th scope="col">Creado</th>
-                </tr>
-            </thead>
-
-            <tbody>
+            <tbody id="prod-body">
+                @* (deja el foreach/empty tal cual, el JS reemplazará este bloque) *@
                 @if (!items.Any())
                 {
-                    <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
-                            No hay resultados.
-                        </td>
-                    </tr>
+                    <tr><td colspan="5" class="text-center text-muted py-4">No hay resultados.</td></tr>
                 }
                 else
                 {
@@ -68,11 +52,8 @@
                     {
                         <tr>
                             <td data-label="ID">@p.IdProducto</td>
-                            <td data-label="Nombre" class="col-nombre fw-semibold">@p.Nombre</td>
+                            <td data-label="Nombre" class="fw-semibold">@p.Nombre</td>
                             <td data-label="Tipo">@p.IdTipoProd</td>
-                            <td data-label="Categoría">@p.IdCategoria</td>
-                            <td data-label="Unidad">@p.IdUnidad</td>
-                            <td data-label="Origen">@p.Origen</td>
                             <td data-label="Estado">
                                 @{
                                     var estado = (p.Estado ?? "").ToUpperInvariant();
@@ -80,8 +61,11 @@
                                 }
                                 <span class="badge @(ok ? "ok" : "danger")">@estado</span>
                             </td>
-                            <td data-label="Creado">
-                                @p.FechaCrea?.ToString("yyyy-MM-dd HH:mm")
+                            <td class="ta-right">
+                                <a class="btn btn-sm btn-outline-primary"
+                                   data-modal-url="@Url.Action("EditarPrecios", "Productos", new { id = p.IdProducto })">
+                                    <i class="bi bi-currency-dollar"></i> $ ASIG. PRECIOS.
+                                </a>
                             </td>
                         </tr>
                     }
@@ -90,10 +74,87 @@
         </table>
     </div>
 
+    <style>
+        /* Solo PC / desktop */
+        @@media (min-width: 1024px) {
+            /* Forzamos anchos por columna y truncamos el nombre */
+            .table
+
+        {
+            table-layout: fixed; /* respeta los widths de las columnas */
+            width: 100%;
+        }
+
+        /* 1) ID */
+        .table thead th:nth-child(1),
+        .table tbody td:nth-child(1) {
+            width: 5.5rem; /* ~88px */
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        /* 2) Nombre (se expande y trunca con …) */
+        .table thead th:nth-child(2),
+        .table tbody td:nth-child(2) {
+            width: auto; /* ocupa todo lo restante */
+            max-width: 1px; /* truco para que el ellipsis funcione con table-layout:fixed */
+        }
+
+        .table tbody td:nth-child(2) {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 3) Tipo */
+        .table thead th:nth-child(3),
+        .table tbody td:nth-child(3) {
+            width: 5rem; /* ~80px */
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* 4) Estado */
+        .table thead th:nth-child(4),
+        .table tbody td:nth-child(4) {
+            width: 7rem; /* ~112px (badge cabe) */
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* 5) Acciones */
+        .table thead th:nth-child(5),
+        .table tbody td:nth-child(5) {
+            width: 15rem; /* ~128px */
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        /* Botón compacto para que la fila no crezca */
+        .table .btn.btn-sm {
+            padding: .25rem .5rem;
+            font-size: .85rem;
+            line-height: 1.2;
+        }
+
+        }
+
+        /* Optional: en pantallas muy anchas, damos un poco más a “Acciones” */
+        @@media (min-width: 1400px) {
+            .table thead th:nth-child(5), .table tbody td:nth-child(5)
+
+        {
+            width: 9rem;
+        }
+
+        }
+    </style>
+
+
     <!-- PAGINACIÓN -->
     @if (totalPages > 1)
     {
-        <nav aria-label="Paginación" class="pager">
+        <nav id="prod-pager" aria-label="Paginación" class="pager">
             <!-- Anterior -->
             @if (hasPrev)
             {
@@ -158,7 +219,101 @@
         </nav>
     }
 
-    <div class="meta">
+    <div id="prod-meta" class="meta">
         Mostrando @items.Count de @totalItems ítems · Página @currentPage de @totalPages
     </div>
 </div>
+
+
+
+
+@section Scripts {
+    <script>
+        (function () {
+            const modal = document.getElementById('app-modal');      // host del modal (Shared/_ModalHost.cshtml)
+            const body  = document.getElementById('app-modal-body');
+
+            // Normaliza precio "1,25" -> 1.25; mínimo 1.00
+            function normPrecio(s) {
+                if (!s) return null;
+                s = s.trim().replace(',', '.');
+                const v = Number(s);
+                if (!Number.isFinite(v)) return null;
+                return Math.max(1, Math.round(v * 100) / 100);
+            }
+
+            // === Abrir modal desde cualquier link con data-modal-url ===
+            document.addEventListener('click', async (ev) => {
+                const a = ev.target.closest('a[data-modal-url]');
+                if (!a) return;
+
+                ev.preventDefault();
+                const url = a.getAttribute('data-modal-url');
+                if (!url) return;
+
+                // Cargar el parcial del servidor
+                const html = await fetch(url, { credentials: 'same-origin' }).then(r => r.text());
+                body.innerHTML = html;
+
+                // Mostrar modal
+                modal.classList.remove('app-modal_hidden');
+                modal.setAttribute('aria-hidden', 'false');
+            });
+
+            // Cerrar modal (botón con data-modal-close en el host)
+            document.addEventListener('click', (ev) => {
+                if (ev.target.matches('[data-modal-close]')) {
+                    modal.classList.add('app-modal_hidden');
+                    modal.setAttribute('aria-hidden', 'true');
+                    body.innerHTML = '';
+                }
+            });
+
+            // === Guardar precio por talla (delegado dentro del modal) ===
+            document.addEventListener('click', async (ev) => {
+                const btn = ev.target.closest('#app-modal .js-save');
+                if (!btn) return;
+
+                const row   = btn.closest('tr');
+                const talla = row?.dataset?.talla ?? '';
+                const inp   = row?.querySelector('.js-precio');
+                const precio = normPrecio(inp?.value ?? '');
+
+                if (!talla) { alert('Talla inválida.'); return; }
+                if (precio === null) { alert('Precio inválido (mínimo 1.00).'); inp.focus(); return; }
+
+                // Token AntiForgery y producto desde el contenido del modal
+                const token = document.querySelector('#app-modal #js-anti input[name="__RequestVerificationToken"]')?.value;
+                const pid   = Number(document.querySelector('#app-modal #js-id-producto')?.value || 0);
+                if (!pid || !token) { alert('No se pudo obtener datos del formulario.'); return; }
+
+                btn.disabled = true;
+                try {
+                    const res = await fetch('/Productos/ActualizarPrecio', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify({ idProducto: pid, idTalla: talla, precio }),
+                        credentials: 'same-origin'
+                    });
+                    const data = await res.json();
+                    if (!data.ok) {
+                        alert(data.msg || 'No se pudo actualizar.');
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    // Feedback visual
+                    inp.value = precio.toFixed(2);
+                    btn.textContent = 'OK';
+                    setTimeout(() => { btn.textContent = 'Guardar'; btn.disabled = false; }, 800);
+                } catch (e) {
+                    alert('Error de red: ' + e.message);
+                    btn.disabled = false;
+                }
+            });
+        })();
+    </script>
+}

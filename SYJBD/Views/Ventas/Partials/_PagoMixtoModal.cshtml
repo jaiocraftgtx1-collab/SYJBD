@@ -1,0 +1,196 @@
+﻿<div class="modal-header">
+    <h5 class="modal-title">Método de pago mixto</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+
+<div class="modal-body">
+    <div class="alert alert-secondary fw-semibold">
+        TOTAL A PAGAR: S/. <span id="mixTotal">0.00</span>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label">Método de pago 1</label>
+            <select id="mixMP1" class="form-select">
+                <option value="">-- Seleccione --</option>
+                <option selected>EFECTIVO</option>
+                <option>YAPE</option>
+                <option>PLIN</option>
+                <option>BCP</option>
+                <option>INTERBANK</option>
+                <option>BBVA</option>
+                <option>SCOTIABANK</option>
+                <option>BANCO DE LA NACION</option>
+            </select>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Monto MP1</label>
+            <input id="mixMonto1" type="text" class="form-control" inputmode="decimal" autocomplete="off">
+            <div class="invalid-feedback" id="err-m1"></div>
+            <div class="form-text" id="warn-m1" style="display:none;">El monto excede el total. Podrás corregirlo antes de aceptar.</div>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Método de pago 2</label>
+            <select id="mixMP2" class="form-select">
+                <option value="">-- Seleccione --</option>
+                <option>EFECTIVO</option>
+                <option selected>YAPE</option>
+                <option>PLIN</option>
+                <option>BCP</option>
+                <option>INTERBANK</option>
+                <option>BBVA</option>
+                <option>SCOTIABANK</option>
+                <option>BANCO DE LA NACION</option>
+            </select>
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">Monto MP2</label>
+            <input id="mixMonto2" type="text" class="form-control" readonly>
+            <div class="invalid-feedback" id="err-m2"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-secondary" data-bs-dismiss="modal">Volver</button>
+    <button id="mixOk" class="btn btn-primary">Aceptar</button>
+</div>
+
+<script>
+    (() => {
+      const metodos = ["EFECTIVO","YAPE","PLIN","BCP","INTERBANK","BBVA","SCOTIABANK","BANCO DE LA NACION"];
+
+      const $m1  = $("#mixMonto1");
+      const $m2  = $("#mixMonto2");
+      const $mp1 = $("#mixMP1");
+      const $mp2 = $("#mixMP2");
+      const $ok  = $("#mixOk");
+
+      const $warn = $("#warn-m1");
+
+      const getTotal = () => +(document.getElementById("mixMonto1").dataset.total || 0);
+      const to2 = v => (Math.round((+v + Number.EPSILON) * 100) / 100).toFixed(2);
+
+      // Normaliza: solo dígitos + un punto, máx. 2 decimales, sin signo
+      function normDec(s){
+        s = (s||"").toString().replace(/,/g,".").replace(/[^\d.]/g,"");
+        const parts = s.split(".");
+        if (parts.length > 2) s = parts[0] + "." + parts.slice(1).join("");
+        const [ent, dec=""] = s.split(".");
+        const entN = ent.replace(/^0+(\d)/, "$1");
+        return (entN || (s.includes(".") ? "0" : "")) + (s.includes(".") ? "." + dec.slice(0,2) : "");
+      }
+
+      function setErr($inp, id, msg){
+        const el = document.getElementById(id);
+        if (msg){
+          $inp.addClass("is-invalid");
+          if (el) el.textContent = msg;
+        } else {
+          $inp.removeClass("is-invalid");
+          if (el) el.textContent = "";
+        }
+      }
+      function clearAllErr(){
+        setErr($m1, "err-m1", ""); setErr($m2, "err-m2", "");
+      }
+
+      // Recarga el otro select sin repetir método
+      function recargar($origen, $destino){
+        const val = ($origen.val() || "").toUpperCase();
+        const keep = ($destino.val() || "").toUpperCase();
+        $destino.empty().append('<option value="">-- Seleccione --</option>');
+        metodos.forEach(m => { if (m !== val) $destino.append(`<option${keep===m?' selected':''}>${m}</option>`); });
+      }
+
+      // Inicial: MP1 EFECTIVO, MP2 YAPE, y evita repetir
+      recargar($mp1, $mp2);
+      $mp1.val("EFECTIVO");
+      recargar($mp1, $mp2);
+      $mp2.val("YAPE");
+
+      $mp1.on("change", () => recargar($mp1, $mp2));
+      $mp2.on("change", () => recargar($mp2, $mp1));
+
+      // Recalcular en vivo
+      function recalc(){
+        const total = getTotal();
+        const before = $m1.val();
+        const clean  = normDec(before);
+        if (before !== clean) $m1.val(clean);
+
+        if (clean === "") { // vacío => MP2 = total
+          $m2.val(to2(total));
+          clearAllErr();
+          $warn.hide();
+          return;
+        }
+
+        const v1 = parseFloat(clean || "0");
+        const v2 = Math.max(0, total - (isNaN(v1)?0:v1));
+        $m2.val(to2(v2));
+
+        clearAllErr();
+        if (v1 < 0) { setErr($m1, "err-m1", "No se permiten negativos."); $warn.hide(); return; }
+        if (v1 > total) { $warn.show(); } else { $warn.hide(); }
+      }
+      $m1.on("input", recalc);
+      $m1.on("paste", () => requestAnimationFrame(recalc));
+
+      // Validación final al aceptar
+      $ok.on("click", () => {
+        clearAllErr();
+        const total = getTotal();
+        const mp1 = ($mp1.val()||"").trim();
+        const mp2 = ($mp2.val()||"").trim();
+        const v1  = parseFloat(normDec($m1.val()||""));
+        const v2  = parseFloat(normDec($m2.val()||""));
+        let first = null; const focus = $el => { if(!first) first=$el; };
+
+        if (!mp1 || !mp2){ alert("Selecciona ambos métodos de pago."); return; }
+        if (mp1 === mp2){ alert("Los métodos de pago deben ser distintos."); return; }
+
+        if (isNaN(v1)) { setErr($m1,"err-m1","Ingresa un monto."); focus($m1); }
+        if (isNaN(v2)) { setErr($m2,"err-m2","Ingresa un monto."); focus($m2); }
+
+        if (v1 <= 0){ setErr($m1,"err-m1","El monto debe ser mayor a 0."); focus($m1); }
+        if (v2 <= 0){ setErr($m2,"err-m2","El monto debe ser mayor a 0."); focus($m2); }
+
+        if (v1 > total){ setErr($m1,"err-m1","No puede exceder el total."); focus($m1); }
+        if (v2 > total){ setErr($m2,"err-m2","No puede exceder el total."); focus($m2); }
+
+        if (v1 === total){ setErr($m1,"err-m1","No puede ser igual al total (sería pago único)."); focus($m1); }
+
+        const sumOk = Math.abs((v1 + v2) - total) < 0.01;
+        if (!sumOk){
+          const calc = Math.max(0, total - (isNaN(v1)?0:v1));
+          $m2.val(to2(calc));
+          setErr($m2, "err-m2", "La suma de montos debe ser igual al total.");
+          focus($m1);
+        }
+
+        if ($(".is-invalid").length){ first?.focus(); return; }
+
+        document.dispatchEvent(new CustomEvent("mixto:ok", {
+          detail: { mp1, mp2, m1: +to2(v1), m2: +to2(v2) }
+        }));
+      });
+
+      // Si el server pasó el total vía ViewBag, lo aplicamos
+      (function initTotalFromServer(){
+        const t = Number('@(ViewBag.Total ?? 0)');
+        if (!isNaN(t) && t>0){
+          document.getElementById('mixTotal').textContent = t.toFixed(2);
+          document.getElementById('mixMonto1').dataset.total = String(t);
+          $m1.val('');                    // empieza vacío
+          $m2.val(to2(t));                // MP2 toma el total hasta que escribas M1
+        }
+      })();
+
+      // Primer cálculo
+      recalc();
+    })();
+</script>

@@ -1,0 +1,241 @@
+﻿@model SYJBD.Models.Ventas.VentaComprobanteVM
+@{
+    Layout = null;
+
+    // Mapeo de código a texto largo
+    string DocFull(string cod) => cod?.ToUpper() switch
+    {
+        "NTV" => "NOTA DE VENTA",
+        "TKT" => "TICKET DE VENTA",
+        "BLT" => "BOLETA ELECTRÓNICA",
+        "FCT" => "FACTURA ELECTRÓNICA",
+        _ => (Model?.TipoDocumentoLabel ?? "COMPROBANTE")
+    };
+    
+    string doc = DocFull(Model.TipoDocumento);
+    string serieId = Model.NumeroDoc;              // <— ANTES usabas Serie + IdVenta
+    string fecha = Model.FechaVenta.ToString("dd/MM/yyyy");
+    string hora = Model.FechaVenta.ToString("HH:mm");
+
+    // QR (puedes reemplazar por tu servicio)
+    string qr = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" +
+                Uri.EscapeDataString($"{Model.Serie}-{Model.NumeroDoc}|{Model.ClienteNombre}|{Model.Total:0.00}|{Model.FechaVenta:yyyy-MM-dd HH:mm}");
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Ticket 80mm @Model.NumeroDoc</title>
+
+    <style>
+        /* === Fondo animado (solo pantalla) === */
+        @@media screen {
+            body {
+                background: linear-gradient(135deg, #f3f4f6, #f1f2f3, #e5e7eb, #f3f4f6);
+                background-size: 400% 400%;
+                animation: bgMove 18s ease infinite;
+            }
+
+            @@keyframes bgMove {
+                0% {
+                    background-position: 0% 50%;
+                }
+
+                50% {
+                    background-position: 100% 50%;
+                }
+
+                100% {
+                    background-position: 0% 50%;
+                }
+            }
+        }
+
+        /* Impresión: fondo blanco */
+        @@media print {
+            body {
+                background: #fff !important;
+                animation: none !important;
+            }
+        }
+
+        html, body {
+            font: 12px/1.35 "Inter",Arial,Helvetica,sans-serif;
+            color: #111;
+            margin: 0
+        }
+
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 10px;
+            background: #fff;
+            border-bottom: 1px solid #eef1f5
+        }
+
+        .tbtn {
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid #d0d7e2;
+            background: #0f172a;
+            color: #fff;
+            cursor: pointer
+        }
+
+        .tbtn--ghost {
+            background: #fff;
+            color: #111;
+            border-color: #e2e8f0
+        }
+
+        @@media print {
+            .toolbar {
+                display: none
+            }
+        }
+
+        .paper {
+            max-width: 76mm;
+            margin: 16px auto;
+            background: #fff;
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 18px 36px rgba(17,24,39,.16)
+        }
+
+        .h1 {
+            font-size: 18px;
+            font-weight: 800;
+            text-align: center;
+            margin: 4px 0
+        }
+
+        .sub {
+            font-size: 12px;
+            text-align: center
+        }
+
+        .badge {
+            display: inline-block;
+            border: 1px solid #111;
+            border-radius: 999px;
+            padding: 2px 8px;
+            margin-top: 6px
+        }
+
+        .kv {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 4px;
+            margin-top: 8px
+        }
+
+        .hr {
+            border-top: 1px solid #111;
+            margin: 8px 0
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px
+        }
+
+        th, td {
+            padding: 4px;
+            border: 1px solid #cfd6e3
+        }
+
+        .ta-right {
+            text-align: right
+        }
+
+        .small {
+            text-align: center;
+            margin-top: 8px;
+            color: #6b7280
+        }
+    </style>
+</head>
+<body>
+
+    <!-- barra de acciones (no imprime) -->
+    <div class="toolbar no-print">
+        <button class="tbtn--ghost tbtn" onclick="window.close()">Cerrar</button>
+        <button class="tbtn" onclick="window.print()">Imprimir</button>
+    </div>
+
+    <div class="paper">
+        <div class="h1">S & J STYLE</div>
+        <div class="sub">
+            SUCURSAL: @Model.TiendaNombre<br />
+            RUC: 20612188859
+            <div class="badge">@doc&nbsp;&nbsp;@serieId</div>
+        </div>
+
+        <div class="kv" style="margin-top:10px">
+            <b>CLIENTE:</b> <div>@Model.ClienteNombre</div>
+            <b>NRO. DOC:</b> <div>@Model.ClienteRuc</div>
+            <b>FECHA:</b> <div>@fecha</div>
+            <b>HORA:</b> <div>@hora</div>
+            <b>MONEDA:</b> <div>@Model.Moneda</div>
+            <b>IGV:</b> <div>@Model.IgvTasa.ToString("P0")</div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:16%">CANT.</th>
+                    <th>DESCRIPCIÓN</th>
+                    <th style="width:16%">P/U</th>
+                    <th style="width:18%">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var it in Model.Items)
+                {
+                    <tr>
+                        <td class="ta-right">@it.Cantidad.ToString("0.##")</td>
+                        <td>
+                            @it.Nombre
+                            <div style="font-size:11px;color:#6b7280">@it.IdProducto / @it.IdTalla</div>
+                        </td>
+                        <td class="ta-right">@it.PrecioUnitario.ToString("0.00")</td>
+                        <td class="ta-right">@it.Total.ToString("0.00")</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr><td colspan="3" class="ta-right"><b>Op. Gravada</b></td><td class="ta-right">@Model.SubTotal.ToString("0.00")</td></tr>
+                <tr><td colspan="3" class="ta-right"><b>IGV</b></td><td class="ta-right">@Model.Igv.ToString("0.00")</td></tr>
+                <tr><td colspan="3" class="ta-right"><b>IMPORTE TOTAL</b></td><td class="ta-right"><b>@Model.Total.ToString("0.00")</b></td></tr>
+            </tfoot>
+        </table>
+
+        <div class="hr"></div>
+
+        <b>FORMA DE PAGO:</b>
+        <div>
+            @if (!string.IsNullOrWhiteSpace(Model.MP1) && Model.MontoMP1 > 0)
+            {
+                <div>@Model.MP1: S/ @Model.MontoMP1.ToString("0.00")</div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.MP2) && Model.MontoMP2 > 0)
+            {
+                <div>@Model.MP2: S/ @Model.MontoMP2.ToString("0.00")</div>
+            }
+        </div>
+
+        <div style="text-align:center;margin-top:10px">
+            <img src="@qr" width="100" height="100" alt="QR" />
+        </div>
+
+        <div class="small">Síguenos en nuestras redes sociales: Facebook, Tiktok, Instagram</div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,101 @@
+﻿@model SYJBD.Models.Ventas.VentaComprobanteVM
+
+<div class="crx-wrapper">
+    <header class="crx-header">
+        <h3 class="crx-h">Imprimir @Model.TipoDocumentoLabel — @Model.NumeroDoc</h3>
+
+        <button type="button" class="btn btn-danger btn-sm" data-modal-close>Cerrar</button>
+    </header>
+
+    <!-- Íconos -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <section class="crx-card">
+        <div class="crx-grid2">
+            <div class="crx-box">
+                <h5 class="crx-title">Formato 80 mm</h5>
+                <p class="crx-sub">Optimizado para impresora térmica de 80 mm.</p>
+
+                <a class="crx-btn crx-btn--grad" target="_blank"
+                   href="@Url.Action("Ticket80", "Ventas", new { id = Model.IdVenta })">
+                    <i class="bi bi-eye"></i> Ver 80 mm
+                </a>
+            </div>
+
+            <div class="crx-box">
+                <h5 class="crx-title">Formato A4</h5>
+                <p class="crx-sub">Diseño de boleta completa en A4.</p>
+
+                <a class="crx-btn crx-btn--grad2" target="_blank"
+                   href="@Url.Action("TicketA4", "Ventas", new { id = Model.IdVenta })">
+                    <i class="bi bi-eye"></i> Ver A4
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Styles {
+    <style>
+        .crx-grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px
+        }
+
+        .crx-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 10px 28px rgba(17,24,39,.08)
+        }
+
+        .crx-title {
+            margin: 0 0 6px;
+            font-weight: 800
+        }
+
+        .crx-sub {
+            margin: 0 0 16px;
+            color: #6b7280
+        }
+
+        .crx-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .7rem 1.1rem;
+            border-radius: 12px;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            box-shadow: 0 10px 22px rgba(17,24,39,.15);
+            transition: transform .15s, box-shadow .15s
+        }
+
+            .crx-btn i {
+                font-size: 1.05rem
+            }
+
+            .crx-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 16px 28px rgba(17,24,39,.22)
+            }
+
+        .crx-btn--grad {
+            background-image: linear-gradient(135deg,#6a89ff,#4361ee)
+        }
+
+        .crx-btn--grad2 {
+            background-image: linear-gradient(135deg,#00b3a4,#14c6a3)
+        }
+        @@media (max-width:768px) {
+            .crx-grid2
+
+        {
+            grid-template-columns: 1fr
+        }
+
+        }
+    </style>
+}

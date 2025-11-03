@@ -1,0 +1,57 @@
+﻿<div class="modal-header">
+    <h5 class="modal-title">Seleccione método de depósito</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+<div class="modal-body">
+    <div class="row g-3 text-center">
+        @* Cada botón dispara evento con el nombre del medio *@
+        <div class="col-6 col-sm-3">
+            <button class="btn btn-outline-primary w-100 bank-btn" data-name="YAPE">
+                Yape
+            </button>
+        </div>
+        <div class="col-6 col-sm-3">
+            <button class="btn btn-outline-primary w-100 bank-btn" data-name="PLIN">
+                Plin
+            </button>
+        </div>
+        <div class="col-6 col-sm-3">
+            <button class="btn btn-outline-primary w-100 bank-btn" data-name="BCP">
+                BCP
+            </button>
+        </div>
+        <div class="col-6 col-sm-3">
+            <button class="btn btn-outline-primary w-100 bank-btn" data-name="INTERBANK">
+                Interbank
+            </button>
+        </div>
+
+        <div class="col-6 col-sm-3">
+            <button class="btn btn-outline-primary w-100 bank-btn" data-name="BBVA">
+                BBVA
+            </button>
+        </div>
+        <div class="col-6 col-sm-3">
+            <button class="btn btn-outline-primary w-100 bank-btn" data-name="SCOTIABANK">
+                Scotiabank
+            </button>
+        </div>
+        <div class="col-6 col-sm-3">
+            <button class="btn btn-outline-primary w-100 bank-btn" data-name="BANCO DE LA NACION">
+                Banco de la Nación
+            </button>
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-secondary" data-bs-dismiss="modal">Volver</button>
+</div>
+
+<script>
+    (() => {
+        $("#mdlDeposito .bank-btn").on("click", function(){
+            const nombre = $(this).data("name");
+            document.dispatchEvent(new CustomEvent("deposito:elegido", { detail: nombre }));
+        });
+    })();
+</script>

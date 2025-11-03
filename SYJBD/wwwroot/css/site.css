@@ -1,19 +1,24 @@
 ﻿/* ====================================================================
-   SVJ STYLE - site.css (versión unificada y comentada)
+   SVJ STYLE - site.css (limpio y unificado)
    ====================================================================
 
-   BLOQUES:
+   ÍNDICE
    01) Variables
-   02) Base / reset simple
-   03) Topbar (fijo)
-   04) Layout principal (main/content) + modo "sidebar-closed"
-   05) Sidebar (fijo + off-canvas)
-   06) Cards (sección Productos)
-   07) Tabla (contenedor, tabla, badges, paginación)
-   08) Footer (fijo)
-   09) Responsivo Tablet/Móvil (<=1024 y <=640)
-   10) Responsivo Desktop (>=1025)
-   11) Utilidades táctiles
+   02) Base / Reset
+   03) Topbar
+   04) Layout principal
+   05) Sidebar
+   06) Cards y cabeceras
+   07) Tabla (genérica)
+   08) Footer
+   09) Modal (host)
+   09.b) Modal – Reflow tablas
+   10) Utilidades
+   11) Responsivo (≤1024, ≤640, ≥1025)
+   12) Caja Reportes (estilos)
+   13) Filtros / selector (genéricos)
+   14) Loader global
+   15) Overlays/host helpers
    ==================================================================== */
 
 
@@ -21,34 +26,52 @@
    01) VARIABLES
    ==================================================================== */
 :root {
-    /* Paleta */
-    --bg: #1f2b44; /* fondo sidebar */
-    --bg-2: #223052; /* matiz secundario */
-    --text: #eef3fb; /* texto sidebar */
-    --muted: #b8c4d6; /* texto suave */
-    --brand: #7b5cff; /* gradiente topbar (izq) */
-    --brand-2: #5a44d6; /* gradiente topbar (der) */
-    --accent: #22c55e; /* éxito */
-    --danger: #ef4444; /* error */
+    /* Colores base */
+    --bg: #1f2b44;
+    --bg-2: #223052;
+    --text: #eef3fb;
+    --muted: #b8c4d6;
+    --brand: #7b5cff;
+    --brand-2: #5a44d6;
+    --accent: #22c55e;
+    --danger: #ef4444;
     /* UI */
     --shadow: 0 6px 18px rgba(0,0,0,.12);
     --radius: 16px;
-    /* Alturas de elementos fijos */
-    --topbar: 70px; /* header morado fijo */
-    --footer: 56px; /* footer fijo */
-    /* Altos de header interno (título+buscador) */
+    /* Alturas fijas */
+    --topbar: 70px;
+    --footer: 56px;
+    /* Cabeceras internas */
     --hdr-desktop: 56px;
     --hdr-tablet: 72px;
     --hdr-mobile: 92px;
+    /* Paleta “Caja Reporte” */
+    --cr-green: #16a34a;
+    --cr-red: #e11d48;
+    --cr-blue: #1d4ed8;
+    --cr-green-bg: #e8f7ee;
+    --cr-green-br: #bfe9ce;
+    --cr-green-ink: #0e7c35;
+    --cr-red-bg: #ffe9ef;
+    --cr-red-br: #ffc9d6;
+    --cr-red-ink: #b41638;
+    --cr-blue-bg: #eaf1ff;
+    --cr-blue-br: #cfe0ff;
+    --cr-blue-ink: #14359a;
+    --cr-chip-bg: #f4f7ff;
+    --cr-chip-br: #e7ecff;
+    /* Reporte */
+    --cr-dark: #0f172a;
+    --cr-border: #e5e7eb;
+    --cr-soft: #f1f5f9;
+    --cr-shadow: 0 10px 30px rgba(0,0,0,.12);
 }
 
 
 /* ====================================================================
-   02) BASE / RESET SIMPLE
+   02) BASE / RESET
    ==================================================================== */
-*,
-*::before,
-*::after {
+*, *::before, *::after {
     box-sizing: border-box;
 }
 
@@ -60,27 +83,39 @@ html {
     scroll-behavior: smooth;
 }
 
+@font-face {
+    font-family: "Satoshi";
+    src: url("/fonts/satoshi/Satoshi-Variable.woff2") format("woff2");
+    font-weight: 300 900;
+    font-style: normal;
+    font-display: swap;
+}
+
 body {
     margin: 0;
     background: #fff;
     color: #1f2937;
-    font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
+    font-family: "Satoshi",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
     line-height: 1.4;
 }
 
-/* Estados de enfoque visibles y consistentes */
 :focus-visible {
     outline: 2px solid #93c5fd;
     outline-offset: 2px;
 }
 
-/* Utilidad: oculto accesible */
 .d-none {
     display: none !important;
 }
 
+.bi::before {
+    font-family: "bootstrap-icons" !important;
+}
+/* fija icon font */
+
+
 /* ====================================================================
-   03) TOPBAR (FIJO)
+   03) TOPBAR
    ==================================================================== */
 .topbar {
     position: fixed;
@@ -98,7 +133,7 @@ body {
         height: 100%;
     }
 
-.btn-toggle-sidebar {
+#sidebarToggle, .btn-toggle-sidebar {
     border: 0;
     background: transparent;
     color: #fff;
@@ -111,74 +146,62 @@ body {
     justify-content: center;
 }
 
-    .btn-toggle-sidebar:hover {
+    #sidebarToggle:hover {
         background: rgba(255,255,255,.12);
     }
-/* ícono seguro */
-.topbar .bi::before {
-    font-family: "bootstrap-icons" !important;
-}
+
 
 /* ====================================================================
-   04) LAYOUT PRINCIPAL (main/content) + modo "sidebar-closed"
-   Nota: tu _Layout usa <main class="main"> y <div class="content">.
-   Para compatibilidad previa, incluimos alias para .main-content.
+   04) LAYOUT PRINCIPAL
    ==================================================================== */
-.main,
-.main-content { /* alias */
+.main, .main-content {
     display: block;
     padding-top: var(--topbar);
     padding-bottom: var(--footer);
-    padding-left: 270px; /* reserva para sidebar fijo en desktop */
+    padding-left: 270px;
     min-height: calc(100dvh - var(--footer));
 }
 
 .content {
-    padding: 22px;
-}
-
-/* En pantallas pequeñas el padding-left lo controla el off-canvas */
-@media (max-width:1024px) {
-    .main,
-    .main-content {
-        padding-left: 0;
-    }
-}
-
-/* Toggle manual del sidebar (funciona en cualquier ancho) */
-body.sidebar-closed .sidebar {
-    transform: translateX(-100%);
-}
-
-body.sidebar-closed .main,
-body.sidebar-closed .main-content {
-    padding-left: 22px;
-}
-/* colchón cuando está cerrado */
-
-/* === Mejora: suavizar el margen superior del primer bloque de contenido === */
-.main .content > *:first-child {
-    margin-top: 8px !important;
-}
-
-.main .content > .card:first-child {
-    margin-top: 6px !important;
+    padding: 18px;
 }
 
 .main .content {
     padding-top: 16px;
 }
 
+    .main .content > *:first-child {
+        margin-top: 8px !important;
+    }
+
+    .main .content > .card:first-child {
+        margin-top: 6px !important;
+    }
+
+body.sidebar-closed .sidebar {
+    transform: translateX(-100%);
+}
+
+body.sidebar-closed .main, body.sidebar-closed .main-content {
+    padding-left: 22px;
+}
+
+@media (max-width:1024px) {
+    .main, .main-content {
+        padding-left: 0;
+    }
+}
+
 
 /* ====================================================================
-   05) SIDEBAR (FIJO + OFF-CANVAS)
+   05) SIDEBAR
    ==================================================================== */
 .sidebar {
     position: fixed;
     left: 0;
     top: var(--topbar);
     bottom: var(--footer);
-    width: 270px;
+    width: 250px;
     z-index: 1000;
     background: var(--bg);
     color: var(--text);
@@ -192,7 +215,7 @@ body.sidebar-closed .main-content {
         display: flex;
         align-items: center;
         gap: 10px;
-        font-weight: 700;
+        font-weight: 500;
         margin: 8px 8px 16px;
     }
 
@@ -201,7 +224,7 @@ body.sidebar-closed .main-content {
     }
 
     .sidebar .nav-title {
-        font-size: .95rem;
+        font-size: .5rem;
         color: var(--muted);
         padding: 10px 14px 6px 18px;
     }
@@ -218,7 +241,7 @@ body.sidebar-closed .main-content {
     justify-content: space-between;
     gap: 12px;
     cursor: pointer;
-    transition: background .15s ease,border-color .15s ease;
+    transition: background .15s,border-color .15s;
 }
 
     .nav-btn:hover {
@@ -241,19 +264,24 @@ body.sidebar-closed .main-content {
 
     .nav-btn.open .bi-chevron-down {
         transform: rotate(180deg);
-        transition: transform .2s ease;
+        transition: transform .2s;
     }
 
-/* OJO: no uses display:none aquí; el JS controla max-height */
+.sidebar .nav-btn .bi-chevron-down::before {
+    content: "\f282";
+}
+
 .nav-sub {
     display: block;
     overflow: hidden;
     max-height: 0;
-    transition: max-height .25s ease;
+    transition: max-height .3s ease;
     margin: 8px 0 12px 0;
-    padding-left: 8px;
-    border-left: 2px solid rgba(255,255,255,.10);
+    padding-left: 0; /* antes 8px */
+    list-style: none; /* quita los puntos del ul/li */
+    border-left: none; /* antes 2px solid rgba(...) */
 }
+
 
 .nav-link {
     display: flex;
@@ -265,7 +293,7 @@ body.sidebar-closed .main-content {
     text-decoration: none;
     color: var(--text);
     opacity: .96;
-    transition: background .15s ease, border-color .15s ease, color .15s ease;
+    transition: background .15s,border-color .15s,color .15s;
 }
 
     .nav-link:hover {
@@ -286,20 +314,6 @@ body.sidebar-closed .main-content {
         opacity: .95;
     }
 
-/* === Forzar fuente de Bootstrap Icons (evita “cuadritos”) === */
-.sidebar .bi::before, .topbar .bi::before {
-    font-family: "bootstrap-icons" !important;
-    font-style: normal;
-    font-weight: normal !important;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-/* chevrón seguro */
-.sidebar .nav-btn .bi-chevron-down::before {
-    content: "\f282";
-}
-
-/* Off-canvas en móvil/tablet */
 @media (max-width:1024px) {
     .sidebar {
         transform: translateX(-100%);
@@ -315,22 +329,22 @@ body.sidebar-closed .main-content {
     }
 }
 
+
 /* ====================================================================
-   06) CARDS (SECCIÓN PRODUCTOS)
+   06) CARDS Y CABECERAS
    ==================================================================== */
 .card {
     background: #fff;
     border-radius: var(--radius);
     border: 1px solid #e5e7eb;
     box-shadow: var(--shadow);
-    margin-left: 0; /* evita “pegado” al sidebar */
+    margin-left: 0;
 }
 
-/* Header interno de la card */
 .card-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
-    justify-content: space-between;
     gap: 12px;
     padding: 14px 16px;
     min-height: var(--hdr-desktop);
@@ -346,7 +360,6 @@ body.sidebar-closed .main-content {
     margin: 0;
 }
 
-/* Buscador dentro de la card-header */
 .search {
     position: relative;
     min-width: 260px;
@@ -374,19 +387,38 @@ body.sidebar-closed .main-content {
         .search input::placeholder {
             color: #9aa4b2;
         }
-/* ====================================================================
-   07) TABLA (contenedor, tabla, badges, paginación) – HÍBRIDO
-   - Ocupa 100% cuando alcanza
-   - Si el contenido supera el ancho, habilita pan horizontal
-   - Acciones compactas
-   ==================================================================== */
 
-/* Contenedor: pan horizontal/vertical fluido */
+.card.card-soft {
+    border: 1px solid #eef1f4;
+}
+
+    .card.card-soft .card-title {
+        margin: 2px 0 10px;
+        position: relative;
+        padding-left: .5rem;
+    }
+
+        .card.card-soft .card-title::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: .25rem;
+            bottom: .25rem;
+            width: 3px;
+            border-radius: 3px;
+            background: #0f172a;
+            opacity: .18;
+        }
+
+
+/* ====================================================================
+   07) TABLA (GENÉRICA)
+   ==================================================================== */
 .table-wrap {
     position: relative;
     padding: 0 10px 12px 10px;
-    overflow-x: auto; /* pan horizontal si hace falta */
-    overflow-y: visible; /* vertical lo maneja la página (desktop) */
+    overflow-x: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x pan-y;
     overscroll-behavior: contain;
@@ -396,19 +428,10 @@ body.sidebar-closed .main-content {
     box-shadow: inset 0 0 0 1px rgba(17,24,39,.03);
 }
 
-    /* hints de overflow (opcional; desactivados por defecto) */
-    .table-wrap::before,
-    .table-wrap::after {
-        content: none;
-    }
-
-/* Tabla real (modo híbrido):
-   - min-width:100% => llena el contenedor cuando puede
-   - width:max-content => si no alcanza, crece a su contenido y el wrap hace scroll */
 .table {
     display: table !important;
-    min-width: 100% !important; /* al menos el ancho visible */
-    width: max-content !important; /* pero puede crecer si hay muchas columnas */
+    min-width: 100% !important;
+    width: max-content !important;
     border-collapse: separate !important;
     border-spacing: 0;
     font-size: .96rem;
@@ -417,7 +440,6 @@ body.sidebar-closed .main-content {
     overflow: hidden;
 }
 
-    /* Thead */
     .table thead {
         display: table-header-group !important;
     }
@@ -438,15 +460,12 @@ body.sidebar-closed .main-content {
 
             .table thead th:first-child {
                 border-top-left-radius: 12px;
-                border-bottom-left-radius: 0;
             }
 
             .table thead th:last-child {
                 border-top-right-radius: 12px;
-                border-bottom-right-radius: 0;
             }
 
-    /* Cuerpo */
     .table tbody {
         display: table-row-group !important;
     }
@@ -463,41 +482,138 @@ body.sidebar-closed .main-content {
         padding: 12px 14px;
         border-bottom: 1px solid #eef2f7;
         color: #374151;
-        white-space: nowrap; /* columnas compactas; el contenedor panea si excede */
+        white-space: nowrap;
     }
 
     .table tbody tr:hover td {
         background: #f9fafb;
     }
 
-    /* Columna Acciones: siempre compacta */
-    .table thead th:last-child,
-    .table tbody td:last-child {
+    /* Columna acciones compacta */
+    .table thead th:last-child, .table tbody td:last-child {
         width: 1%;
         white-space: nowrap;
     }
 
+/* Acciones (genéricas) */
+.table-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-xs {
+    padding: 6px 9px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-icon {
+    --size: 36px;
+    height: var(--size);
+    width: var(--size);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: #f7f9fc;
+    transition: transform .12s, box-shadow .12s, background .12s, border-color .12s;
+    box-shadow: 0 1px 0 rgba(0,0,0,.06), 0 1px 6px rgba(0,0,0,.04);
+}
+
+    .btn-icon:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(0,0,0,.10);
+    }
+
+    .btn-icon:active {
+        transform: translateY(0);
+        box-shadow: 0 1px 6px rgba(0,0,0,.08);
+    }
+
+    .btn-icon.ghost {
+        background: #eef2ff;
+        border-color: #dbeafe;
+    }
+
+    .btn-icon.success {
+        background: #eaffef;
+        border-color: #b7f3c1;
+    }
+
+    .btn-icon.danger {
+        background: #ffecec;
+        border-color: #ffc0c0;
+    }
+
+    .btn-icon.ghost i {
+        color: #4f46e5;
+    }
+
+    .btn-icon.success i {
+        color: #16a34a;
+    }
+
+    .btn-icon.danger i {
+        color: #e11d48;
+    }
+
+.btn-view {
+    color: #0b57d0;
+    background: #eaf2ff;
+    border-color: #cfe1ff;
+}
+
+.btn-edit {
+    color: #b45309;
+    background: #fff4e6;
+    border-color: #ffdfb8;
+}
+
+.btn-del {
+    color: #b91c1c;
+    background: #ffe9e9;
+    border-color: #ffc9c9;
+}
+
 /* Badges */
 .badge {
     display: inline-block;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-weight: 700;
-    font-size: .72rem;
+    padding: .35rem .55rem;
+    border-radius: .6rem;
+    font-size: .80rem;
+    font-weight: 800;
+    letter-spacing: .015em;
     border: 1px solid transparent;
 }
 
     .badge.ok {
-        background: #e8fff1;
-        color: #166534;
+        background: #e9f8ef;
         border-color: #bbf7d0;
+        color: #0f5132;
+        text-transform: uppercase;
     }
 
-    .badge.danger {
-        background: #ffecec;
-        color: #991b1b;
-        border-color: #fecaca;
-    }
+.badge--warn {
+    background: #fff3e0;
+    color: #d97706;
+}
+
+.badge.danger {
+    background: #ffe9ea;
+    border-color: #fecaca;
+    color: #7f1d1d;
+    text-transform: uppercase;
+}
+
+.badge--open {
+    background: #fff6b3;
+    color: #1f2937;
+}
 
 /* Paginación */
 .pager {
@@ -528,7 +644,15 @@ body.sidebar-closed .main-content {
             font-weight: 700;
         }
 
-/* Texto meta */
+    .pager.pager--sticky {
+        position: sticky;
+        bottom: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,.65), #fff);
+        backdrop-filter: blur(2px);
+        border-top: 1px solid #eef1f4;
+        padding-top: .6rem;
+    }
+
 .meta {
     font-size: .85rem;
     color: #6b7280;
@@ -538,7 +662,7 @@ body.sidebar-closed .main-content {
 
 
 /* ====================================================================
-   08) FOOTER (FIJO)
+   08) FOOTER
    ==================================================================== */
 .footer {
     position: fixed;
@@ -556,236 +680,24 @@ body.sidebar-closed .main-content {
     text-align: center;
 }
 
+
 /* ====================================================================
-   09) RESPONSIVO – Ajustes de tabla en ≤1024 y ≤640
-   - Mantiene el modo híbrido
-   - Acciones “a mano” (sticky a la derecha)
+   09) MODAL (HOST)
    ==================================================================== */
-
-/* ≤1024px (tablet) */
-@media (max-width:1024px) {
-    /* el contenedor hace scroll vertical interno si la vista es corta */
-    .table-wrap {
-        max-height: calc(100dvh - var(--topbar) - var(--footer) - var(--hdr-tablet));
-        overflow-y: auto !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .table {
-        font-size: .94rem;
-    }
-
-        .table thead th {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-
-        .table tbody td {
-            padding: 10px 12px;
-        }
-
-            /* Acciones pegadas a la derecha (quedan siempre visibles) */
-            .table thead th:last-child,
-            .table tbody td:last-child {
-                position: sticky;
-                right: 0;
-                z-index: 3;
-                background: #fff;
-            }
-
-        .table thead th:last-child {
-            background: #0f172a;
-            color: #e5e7eb;
-            z-index: 4;
-        }
-
-        .table tbody td:last-child {
-            box-shadow: -8px 0 12px rgba(0,0,0,.06);
-        }
-}
-
-/* ≤640px (móvil) */
-@media (max-width:640px) {
-
-    /* Header compacto: título + botón arriba, buscador debajo */
-    .card-header {
-        display: grid;
-        grid-template-columns: 1fr; /* una columna */
-        align-items: center;
-        gap: 10px;
-        min-height: var(--hdr-mobile);
-    }
-
-    .card-title {
-        font-size: 20px;
-        margin: 0;
-    }
-
-    .search {
-        order: 2;
-        min-width: 0;
-    }
-
-    .card-title, .header-row {
-        order: 1;
-    }
-
-    /* Contenedor con scroll vertical interno si hace falta */
-    .table-wrap {
-        max-height: calc(100dvh - var(--topbar) - var(--footer) - var(--hdr-mobile));
-        overflow-y: auto !important;
-        overflow-x: auto !important; /* permite pan horizontal si de verdad lo necesita */
-        -webkit-overflow-scrolling: touch;
-        touch-action: pan-y pan-x;
-        overscroll-behavior: contain;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        padding-bottom: 8px !important;
-        margin-bottom: 8px !important;
-        background: transparent !important;
-        box-shadow: none !important;
-        border-bottom-left-radius: 0 !important;
-        border-bottom-right-radius: 0 !important;
-    }
-
-    /* Tabla en modo híbrido pero más pequeña */
-    .table {
-        min-width: 100% !important; /* llena el ancho disponible */
-        width: max-content !important; /* crece si las columnas exceden */
-        table-layout: auto !important;
-        font-size: .90rem;
-    }
-
-        .table thead th {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-
-        .table tbody td {
-            padding: 8px 10px;
-        }
-
-        /* Permite quiebre de texto en celdas largas (no en Acciones) */
-        .table thead th,
-        .table tbody td {
-            white-space: normal !important;
-            word-break: break-word;
-        }
-
-            /* Acciones: compactas y “a mano” pegadas a la derecha */
-            .table thead th:last-child,
-            .table tbody td:last-child {
-                position: sticky;
-                right: 0;
-                z-index: 3;
-                background: #fff;
-                white-space: nowrap !important; /* que no se partan los botones */
-                width: 1%;
-                box-shadow: -4px 0 8px rgba(0,0,0,.05); /* sombra más sutil */
-            }
-
-            .table thead th:last-child {
-                background: #0f172a;
-                color: #e5e7eb;
-                z-index: 4;
-                box-shadow: none;
-            }
-
-    /* Botones de acción aún más pequeños en móvil */
-    .table-actions {
-        gap: 6px;
-    }
-
-    .btn-xs {
-        padding: 5px 7px;
-        border-radius: 9px;
-    }
-
-    /* Paginación: respiro corto */
-    .pager {
-        margin-top: 6px !important;
-    }
-}/* ====================================================================
-   10) RESPONSIVO DESKTOP (≥1025px) – FULL-WIDTH TABLE
-   ==================================================================== */
-@media (min-width:1025px) {
-    /* Cabecera: título + buscador */
-    .card-header {
-        display: grid;
-        grid-template-columns: 1fr 340px;
-        align-items: center;
-        gap: 16px;
-        padding: 12px 16px;
-    }
-
-    .card-title {
-        font-size: 24px;
-    }
-
-    .search {
-        min-width: 0;
-    }
-
-        .search input {
-            height: 38px;
-        }
-
-    /* La card hasta el borde del content */
-    .content .card {
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-    }
-
-    /* El wrap NO fuerza scrollbar horizontal en desktop */
-    .table-wrap {
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-        padding-bottom: 12px !important; /* <— quita el “bloque” bajo la tabla */
-        overflow-x: visible !important; /* que ocupe todo el ancho */
-    }
-
-    /* La tabla ocupa 100% y reparte ancho automáticamente
-    .table {
-        width: 100% !important;
-        min-width: 0 !important;
-        table-layout: auto !important;
-    } */
-
-        /* En desktop, permitir cortes de línea para adaptarse al ancho */
-        .table thead th, .table tbody td {
-            white-space: normal !important;
-        }
-
-            /* ID y Creado compactos en una línea */
-            .table thead th:nth-child(1),
-            .table tbody td:nth-child(1),
-            .table thead th:nth-child(8),
-            .table tbody td:nth-child(8) {
-                white-space: nowrap !important;
-                width: 1%;
-            }
-
-
-}
-
-
-/* ===== MODAL (centrado) ===== */
-.app-modal.hidden {
-    display: none;
-}
-
 .app-modal {
     position: fixed;
     inset: 0;
     z-index: 1050;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 16px;
+    padding: 5px;
+    padding-top: calc(var(--topbar) + 16px);
 }
+
+    .app-modal.app-modal_hidden {
+        display: none;
+    }
 
 .app-modal__backdrop {
     position: absolute;
@@ -796,14 +708,15 @@ body.sidebar-closed .main-content {
 
 .app-modal__box {
     position: relative;
-    margin: 0;
-    width: min(640px, 92vw);
-    max-height: 90vh;
+    width: min(60%, 94vw);
+    max-height: calc(100dvh - 200px);
     overflow: auto;
     background: #fff;
     border-radius: 14px;
-    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    box-shadow: 0 30px 70px rgba(0,0,0,.28);
+    border: 1px solid rgba(0,0,0,.05);
     outline: none;
+    padding: 5px;
 }
 
 .app-modal__close {
@@ -822,90 +735,267 @@ body.sidebar-closed .main-content {
     }
 
 #app-modal-body {
-    padding: 18px 18px 14px;
+    padding: 3px;
 }
 
-
-/* ===== HEADER INDEX con botón Nuevo al lado ===== */
-.card-header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 12px;
-    align-items: center;
+@media (max-width:1025px) {
+    .app-modal__box {
+        width: min(100%, 94vw);
+        max-height: calc(100vh - 100px);
+    }
 }
 
-    .card-header .header-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+@media (max-width: 480px) {
+    .app-modal {
+        padding-inline: 2px;
+    }
+    /* antes eran 16px por lado */
+    .app-modal__box {
+        width: 99vw;
+        max-height: calc(100vh - 150px);
+    }
+    /* más ancho en móvil */
+}
+
+/* tipografía uniforme dentro del modal */
+#app-modal {
+    --crx-font-size: .95rem;
+}
+
+    #app-modal, #app-modal .card, #app-modal .card-table, #app-modal input.form-control {
+        font-size: var(--crx-font-size);
+        line-height: 1.45;
     }
 
-    .card-header .card-title {
+        #app-modal .card-title {
+            font-size: 1rem;
+        }
+
+
+/* ====================================================================
+   09.b) MODAL – REFLOW TABLAS
+   ==================================================================== */
+@media (max-width:1024px) {
+    #app-modal .card-table thead {
+        display: none;
+    }
+
+    #app-modal .card-table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: .35rem;
+        padding: .45rem .75rem;
+        border-top: 1px solid #eef1f4;
+        background: #fff;
+        border-radius: 10px;
+        margin: .35rem .5rem;
+        box-shadow: 0 1px 0 rgba(0,0,0,.02);
+    }
+
+    #app-modal .card-table tbody td {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        align-items: center;
+        gap: .5rem;
+        padding: .1rem 0;
+        white-space: normal !important;
+        word-break: break-word;
+        border: 0;
+    }
+
+        #app-modal .card-table tbody td::before {
+            content: attr(data-label);
+            color: #6b7280;
+            font-weight: 700;
+            letter-spacing: .02em;
+        }
+
+        #app-modal .card-table tbody td + td {
+            border-top: 1px dashed #eef1f4;
+            padding-top: .55rem;
+            margin-top: .25rem;
+        }
+}
+
+
+/* ====================================================================
+   10) UTILIDADES
+   ==================================================================== */
+.ta-right {
+    text-align: right;
+}
+
+.ta-center {
+    text-align: center;
+}
+
+.w-12 {
+    width: 12%;
+}
+
+.w-15 {
+    width: 15%;
+}
+
+.w-20 {
+    width: 20%;
+}
+
+.w-38 {
+    width: 38%;
+}
+
+.w-40 {
+    width: 40%;
+}
+
+.w-60 {
+    width: 60%;
+}
+
+.card-table th[style*="width:90px"], .card-table td[style*="width:90px"] {
+    width: 90px;
+}
+
+.card-table th[style*="width:100px"], .card-table td[style*="width:100px"] {
+    width: 100px;
+}
+
+.card-table th[style*="width:120px"], .card-table td[style*="width:120px"] {
+    width: 120px;
+}
+
+.card-table th[style*="width:140px"], .card-table td[style*="width:140px"] {
+    width: 140px;
+}
+
+.card-table th[style*="width:160px"], .card-table td[style*="width:160px"] {
+    width: 160px;
+}
+
+/* no cortar última columna de tablas genéricas */
+.table thead th:last-child, .table tbody td:last-child {
+    white-space: nowrap;
+}
+
+
+/* ====================================================================
+   11) RESPONSIVO
+   ==================================================================== */
+@media (max-width:1024px) {
+    .table-wrap {
+        max-height: calc(100dvh - var(--topbar) - var(--footer) - var(--hdr-tablet));
+        overflow: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        font-size: .94rem;
+    }
+
+        .table thead th {
+            top: 0;
+            z-index: 2;
+        }
+
+        .table tbody td {
+            padding: 10px 12px;
+        }
+
+            .table thead th:last-child, .table tbody td:last-child {
+                position: sticky;
+                right: 0;
+                z-index: 3;
+                background: #fff;
+            }
+
+        .table thead th:last-child {
+            background: #0f172a;
+            color: #e5e7eb;
+            z-index: 4;
+        }
+
+        .table tbody td:last-child {
+            box-shadow: -8px 0 12px rgba(0,0,0,.06);
+        }
+}
+
+@media (max-width:640px) {
+    .card-header {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        min-height: var(--hdr-mobile);
+    }
+
+    .card-title {
+        font-size: 20px;
         margin: 0;
     }
 
-/* ===== ACCIONES: color con micro animación ===== */
-.table-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
-}
+    .search {
+        order: 2;
+        min-width: 0;
+    }
 
-.btn-xs {
-    padding: 6px 9px;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
-}
+    .table-wrap {
+        max-height: calc(100dvh - var(--topbar) - var(--footer) - var(--hdr-mobile));
+        overflow: auto !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y pan-x;
+        overscroll-behavior: contain;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-bottom: 8px !important;
+        margin-bottom: 8px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+    }
 
-.btn-view {
-    color: #1d4ed8;
-    background: #eff6ff;
-    border-color: #bfdbfe;
-}
+    .table {
+        min-width: 100% !important;
+        width: max-content !important;
+        table-layout: auto !important;
+        font-size: .90rem;
+    }
 
-.btn-edit {
-    color: #92400e;
-    background: #fff7ed;
-    border-color: #fed7aa;
-}
+        .table tbody td {
+            padding: 8px 10px;
+        }
 
-.btn-del {
-    color: #991b1b;
-    background: #fef2f2;
-    border-color: #fecaca;
-}
+        .table thead th, .table tbody td {
+            white-space: normal !important;
+            word-break: break-word;
+        }
 
-.btn-view:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(37,99,235,.12);
-}
+            .table thead th:last-child, .table tbody td:last-child {
+                position: sticky;
+                right: 0;
+                z-index: 3;
+                background: #fff;
+                white-space: nowrap !important;
+                width: 1%;
+                box-shadow: -4px 0 8px rgba(0,0,0,.05);
+            }
 
-.btn-edit:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(217,119,6,.14);
-}
+            .table thead th:last-child {
+                background: #0f172a;
+                color: #e5e7eb;
+                z-index: 4;
+                box-shadow: none;
+            }
 
-.btn-del:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(220,38,38,.14);
-    filter: brightness(0.98);
-}
-
-/* Mobile: botones más cerca */
-@media (max-width: 520px) {
     .table-actions {
         gap: 6px;
     }
 
     .btn-xs {
-        padding: 6px 8px;
+        padding: 5px 7px;
+        border-radius: 9px;
     }
-}
-@media (max-width:520px) {
+
+    /* Modal */
     #app-modal-body {
         padding: 14px;
     }
@@ -915,3 +1005,736 @@ body.sidebar-closed .main-content {
     }
 }
 
+@media (min-width:1025px) {
+    .card-header {
+        grid-template-columns: 1fr 340px;
+        gap: 16px;
+        padding: 12px 16px;
+    }
+
+    .card-title {
+        font-size: 24px;
+    }
+
+    .search input {
+        height: 38px;
+    }
+
+    .content .card {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .table-wrap {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-bottom: 12px !important;
+        overflow-x: visible !important;
+    }
+
+    .table thead th, .table tbody td {
+        white-space: normal !important;
+    }
+
+        /* Compactar 1ª y 8ª columnas en listados amplios */
+        .table thead th:nth-child(1),
+        .table tbody td:nth-child(1),
+        .table thead th:nth-child(8),
+        .table tbody td:nth-child(8) {
+            white-space: nowrap !important;
+            width: 1%;
+        }
+}
+
+
+/* ====================================================================
+   12) CAJA REPORTES
+   ==================================================================== */
+.crx-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.crx-header {
+    position: sticky;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--cr-border);
+    border-radius: 14px;
+    padding: 10px 12px;
+    box-shadow: var(--cr-shadow);
+    z-index: 2;
+}
+
+.crx-h {
+    margin: 0;
+    font-weight: 700;
+}
+
+.crx-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.crx-grid--header {
+    grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width:992px) {
+    .crx-grid--header {
+        grid-template-columns: 1fr;
+    }
+}
+
+.crx-stack {
+    display: grid;
+    gap: 16px;
+}
+
+.crx-card {
+    background: #fff;
+    border: 1px solid var(--cr-border);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: var(--cr-shadow);
+    font-size: .95rem;
+}
+
+.crx-title {
+    margin: 0 0 10px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.crx-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--cr-border);
+    border-radius: 12px;
+    padding: 10px 12px;
+}
+
+.crx-card--tone-green .crx-head {
+    background: #e8fbe7;
+}
+
+.crx-card--tone-red .crx-head {
+    background: #ffe8ec;
+}
+
+.crx-card--tone-blue .crx-head {
+    background: #e8edff;
+}
+
+.crx-total {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+}
+
+.crx-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 110px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: #eef2f7;
+    border: 1px solid var(--cr-border);
+    font-weight: 700;
+}
+
+.crx-form {
+    display: grid;
+    gap: 10px 12px;
+}
+
+.crx-form--2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+.crx-col-2 {
+    grid-column: 1/-1;
+}
+
+@media (max-width:768px) {
+    .crx-form--2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.crx-form label {
+    display: grid;
+    gap: 6px;
+    font-size: .9rem;
+}
+
+    .crx-form label > span {
+        color: #6b7280;
+        font-weight: 700;
+    }
+
+.crx-inp {
+    height: 36px;
+    background: #eef2f7;
+    border: 1px solid var(--cr-border);
+    border-radius: 10px;
+    padding: 6px 10px;
+}
+
+.crx-table table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #fff;
+    border: 1px solid var(--cr-border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.crx-table thead th {
+    background: var(--cr-dark);
+    color: #e5e7eb;
+    font-weight: 800;
+    padding: 10px 12px;
+    text-align: left;
+}
+
+.crx-table tbody td {
+    padding: 10px 12px;
+    border-top: 1px solid #eef2f7;
+    white-space: nowrap;
+}
+
+.crx-stats {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.crx-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .55rem .7rem;
+    border-radius: 12px;
+    background: #f5f7fb;
+    border: 1px solid #e5e7eb;
+    font-weight: 700;
+}
+
+.crx-chip--ok {
+    background: #e6fbf0;
+    color: var(--cr-green-ink);
+}
+
+.crx-chip--warn {
+    background: #fff3e0;
+    color: #a15b00;
+}
+
+.crx-chip--danger {
+    background: #ffe9ea;
+    color: var(--cr-red-ink);
+}
+
+.crx-accordion {
+    border: 1px solid var(--cr-border);
+    border-radius: 12px;
+    margin: 10px 0;
+    background: #fff;
+    overflow: hidden;
+}
+
+.crx-acc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+    .crx-acc-head .bi-chevron-down {
+        transition: transform .2s;
+    }
+
+.crx-accordion[open] .bi-chevron-down {
+    transform: rotate(180deg);
+}
+
+.crx-acc-body {
+    padding: 10px 14px 14px;
+}
+
+
+/* ====================================================================
+   13) FILTROS / SELECTOR (GENÉRICOS)
+   ==================================================================== */
+.fd-wrap {
+    position: relative;
+}
+
+.fd-label {
+    display: block;
+    font-size: .9rem;
+    margin-bottom: 6px;
+    color: #555;
+}
+
+.fd-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--cr-border);
+    background: #f1f4f8;
+    padding: 8px 10px;
+    border-radius: 8px;
+    transition: transform .06s;
+}
+
+    .fd-btn:active {
+        transform: scale(.98);
+    }
+
+.fd-menu {
+    position: absolute;
+    inset: auto 0 auto 0;
+    top: 100%;
+    z-index: 20;
+    background: #fff;
+    border: 1px solid var(--cr-border);
+    border-radius: 12px;
+    box-shadow: var(--cr-shadow);
+    display: none;
+}
+
+    .fd-menu.open {
+        display: block;
+    }
+
+.fd-search {
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid var(--cr-border);
+    padding: 8px 10px;
+}
+
+.fd-list {
+    max-height: 220px;
+    overflow: auto;
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+}
+
+    .fd-list li {
+        padding: 8px 10px;
+        cursor: pointer;
+    }
+
+        .fd-list li:hover {
+            background: #f4f6fb;
+        }
+
+.btn-shake {
+    animation: btnShake .35s linear 1;
+}
+
+@keyframes btnShake {
+    0%,100% {
+        transform: translateX(0)
+    }
+
+    25% {
+        transform: translateX(-3px)
+    }
+
+    75% {
+        transform: translateX(3px)
+    }
+}
+
+
+/* ====================================================================
+   14) LOADER GLOBAL
+   ==================================================================== */
+.app-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+}
+
+.app-loader_hidden {
+    display: none;
+}
+
+.app-loader__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15,23,42,.45);
+    backdrop-filter: blur(1.5px);
+}
+
+.app-loader__box {
+    position: relative;
+    width: min(360px,92vw);
+    padding: 22px 22px 20px;
+    border-radius: 16px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.06);
+    box-shadow: 0 30px 70px rgba(0,0,0,.28);
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 14px;
+    align-items: center;
+}
+
+.app-loader__spinner {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: conic-gradient(from 0turn, #3b82f6, #8b5cf6, #3b82f6);
+    -webkit-mask: radial-gradient(farthest-side, transparent 60%, #000 61%);
+    mask: radial-gradient(farthest-side, transparent 60%, #000 61%);
+    animation: appSpin 1s linear infinite;
+}
+
+@keyframes appSpin {
+    to {
+        transform: rotate(1turn);
+    }
+}
+
+.app-loader__text {
+    line-height: 1.2;
+}
+
+#app-loader-text {
+    font-weight: 600;
+    color: #111827;
+}
+
+.app-loader__dots {
+    color: #6b7280;
+}
+
+@media (max-width:380px) {
+    .app-loader__box {
+        grid-template-columns: 48px 1fr;
+        padding: 18px;
+    }
+
+    .app-loader__spinner {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+
+/* ====================================================================
+   15) OVERLAYS / HOST HELPERS
+   ==================================================================== */
+#app-modal, #app-loader {
+    position: fixed;
+    inset: 0;
+}
+
+    #app-modal.app-modal_hidden, #app-loader.app-loader_hidden {
+        display: none !important;
+        pointer-events: none !important;
+        opacity: 0 !important;
+    }
+
+        #app-modal.app-modal_hidden .app-modal__backdrop,
+        #app-modal.app-modal_hidden .app-modal__box {
+            display: none !important;
+        }
+
+/* Bloques auxiliares que no deben verse */
+.nv-aux {
+    display: none !important;
+}
+/* campos meta en “Nueva venta”, pero en general es seguro ocultarlos aquí */
+.nv-meta {
+    display: none !important;
+}
+/* idem */
+
+
+
+/* ========= NUEVA VENTA – MOBILE FULL BLEED + HEADER ACCIONES ========= */
+
+/* 1) MÓVIL ≤640: sin márgenes laterales en la página y sin bordes/sombras en las 3 cards */
+@media (max-width:640px) {
+    /* quita los márgenes laterales que vienen del layout */
+    .nv-page .content,
+    .nv-page .container-xxl {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* las tres tarjetas (cabecera, detalle, totales) sin borde ni sombra */
+    .nv-card {
+        border: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+        /* respiración interna y tabla al borde */
+        .nv-card .card-body {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .nv-card .table-responsive {
+            margin-left: -10px;
+            margin-right: -10px;
+        }
+}
+
+/* 2) Encabezado de la tabla de detalle (incluye columna de acciones) */
+.tbl-detalle thead th {
+    background: #0f172a;
+    color: #e5e7eb;
+    font-weight: 700;
+}
+
+    .tbl-detalle thead th:first-child {
+        border-top-left-radius: 12px;
+    }
+
+    .tbl-detalle thead th:last-child {
+        border-top-right-radius: 12px;
+    }
+
+/* Para que la cabecera de “acciones” NO quede blanca en tablet/móvil */
+@media (max-width:1024px) {
+    .tbl-detalle thead th:last-child,
+    .tbl-detalle tbody td:last-child {
+        position: sticky;
+        right: 0;
+        z-index: 3;
+        background: #fff;
+        white-space: nowrap;
+    }
+
+    .tbl-detalle thead th:last-child {
+        background: #0f172a !important;
+        color: #e5e7eb !important;
+        z-index: 4;
+    }
+}
+
+/* 3) (Opcional) Reafirmar proporciones de columnas en móvil
+   – si ya lo tienes, puedes omitir esta sección */
+@media (max-width:640px) {
+    .tbl-detalle col:nth-child(1) {
+        width: 46% !important;
+    }
+
+    .tbl-detalle col:nth-child(2),
+    .tbl-detalle col:nth-child(3),
+    .tbl-detalle col:nth-child(4) {
+        width: 18% !important;
+    }
+
+    .tbl-detalle col:nth-child(5) {
+        width: 0 !important;
+    }
+    /* acciones */
+}
+
+
+
+/* ====== Variables editables ====== */
+:root {
+    --mp-size: 100px; /* lado del botón (cuadrado) */
+    --mp-radius: 14px; /* borde curveado */
+    --mp-gap: 5px; /* separación entre botones */
+    --mp-border: 2px; /* grosor del borde */
+    --mp-border-color: #0d6efd; /* color del borde (primario) */
+    --mp-bg: #fff; /* fondo normal */
+    --mp-bg-hover: #f3f7ff; /* fondo hover */
+}
+
+/* Grid responsivo para las tiles */
+.mp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(var(--mp-size), 1fr));
+    gap: var(--mp-gap);
+}
+
+/* Tile cuadrada con borde curvo */
+.mp-tile {
+    display: grid;
+    place-items: center;
+    width: var(--mp-size);
+    height: var(--mp-size);
+    padding: 8px;
+    background: var(--mp-bg);
+    border: var(--mp-border) solid var(--mp-border-color);
+    border-radius: var(--mp-radius);
+    cursor: pointer;
+    transition: transform .12s ease, background-color .12s ease, box-shadow .12s ease;
+}
+
+    /* Imagen interna: ocupa bien el cuadro sin deformar */
+    .mp-tile img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+
+    /* Interacciones */
+    .mp-tile:hover {
+        background: var(--mp-bg-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 1px 6px rgba(0,0,0,.08);
+    }
+
+    .mp-tile:active {
+        transform: translateY(0);
+        box-shadow: none;
+    }
+
+    /* Estado activo (si quieres marcar la selección) */
+    .mp-tile.active {
+        background: #e9f2ff;
+        box-shadow: 0 0 0 3px rgba(13,110,253,.15) inset;
+    }
+/* --- Pago mixto horizontal --- */
+.pay-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 90px; /* icono | select | monto */
+    align-items: center;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.pay-ico {
+    width: 36px;
+    height: 36px;
+    max-width: 36px;
+    max-height: 36px;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 0 0 2px rgba(13,110,253,.25); /* borde sutil */
+}
+
+.pay-select {
+    min-height: 38px;
+}
+
+.pay-amount {
+    text-align: right;
+}
+
+/* ===== CajaReporte – tablas anchas con scroll en el modal ===== */
+
+/* El contenedor que habilita el scroll horizontal */
+#app-modal .crx-table__scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+    /* Evita que se “aprieten” las columnas: usar layout fijo y mínimo */
+    #app-modal .crx-table__scroll table {
+        table-layout: fixed;
+        min-width: 640px; /* base prudente */
+    }
+
+/* Gastos y Top usan mínimos un poco mayores para que no colapsen */
+#app-modal .crx-table__scroll--gastos table {
+    min-width: 1150px;
+}
+
+#app-modal .crx-table__scroll--top table {
+    min-width: 920px;
+}
+
+/* Celdas compactas y limpias (coinciden con tu look) */
+#app-modal .crx-table thead th,
+#app-modal .crx-table tbody td {
+    padding: 10px 12px;
+    white-space: nowrap; /* no partir en varias líneas */
+    overflow: hidden; /* para usar ellipsis donde aplique */
+    text-overflow: ellipsis;
+}
+
+/* Solo las columnas “largas” pueden elidir con … */
+#app-modal .crx-table .is-elastic {
+    max-width: 480px; /* se controla con <col> pero esto protege */
+}
+
+/* Ventas por método: 2 columnas, adaptable al ancho sin scroll */
+#app-modal .crx-card.crx-card--tone-green .crx-table table {
+    min-width: 0; /* permite encajar al contenedor */
+    width: 100%;
+    table-layout: auto; /* que la 1ª columna sea flexible */
+}
+
+/* Ajuste visual del header del modal y cartas dentro del modal */
+#app-modal .crx-header.crx-header--compact {
+    padding: 8px 10px;
+    border-radius: 12px;
+}
+
+#app-modal .crx-card {
+    padding: 12px;
+    border-radius: 12px;
+}
+
+/* En móvil: menos padding lateral y bloques más seguidos */
+@media (max-width:640px) {
+    #app-modal #app-modal-body {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+
+    #app-modal .crx-wrapper {
+        gap: 12px;
+    }
+
+    #app-modal .crx-card + .crx-card {
+        margin-top: 6px;
+    }
+}
+/* filas compactas en tablas (desktop) */
+.table td, .table th {
+    vertical-align: middle;
+}
+
+/* botón compacto para no “estirar” la fila */
+.btn-compact {
+    padding: .25rem .55rem;
+    line-height: 1.1;
+    font-size: .85rem;
+    border-radius: .5rem;
+}
+
+@media (min-width:1025px) {
+    .table .btn {
+        padding: .28rem .55rem;
+        font-size: .86rem;
+    }
+}
+
+/* opcional: fija ancho de la columna acciones */
+.col-actions {
+    width: 120px;
+}

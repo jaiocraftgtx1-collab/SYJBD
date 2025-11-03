@@ -47,7 +47,7 @@ namespace SYJBD.Controllers
             // redirección por rol
             return u.Rol?.ToUpperInvariant() == "ADMINISTRADOR"
                 ? RedirectToAction("Index", "Productos")
-                : RedirectToAction("Index", "Home");
+                : RedirectToAction("PuntoDeVenta", "Ventas");
         }
 
         // GET: /Auth/Logout   (para el <a> del sidebar, evita el 404)

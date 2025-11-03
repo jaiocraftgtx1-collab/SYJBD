@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using SYJBD.Data;
 using SYJBD.Services;
+using Rotativa.AspNetCore;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,13 +18,11 @@ var cs = builder.Configuration.GetConnectionString("Default")
 
 builder.Services.AddDbContext<ErpDbContext>(opt =>
 {
-    // AutoDetect obtiene la versión de MySQL/MariaDB para configurar el provider
     opt.UseMySql(cs, ServerVersion.AutoDetect(cs));
 });
 
 // ----------------------------------------------------
 // 2) MVC con política global de autorización
-//    (todo requiere login, excepto [AllowAnonymous])
 // ----------------------------------------------------
 builder.Services.AddControllersWithViews(options =>
 {
@@ -38,7 +38,7 @@ builder.Services.AddControllersWithViews(options =>
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(opt =>
     {
-        opt.LoginPath = "/Auth/Login";     // pantalla de login
+        opt.LoginPath = "/Auth/Login";
         opt.AccessDeniedPath = "/Auth/Denied";
         opt.SlidingExpiration = true;
         opt.ExpireTimeSpan = TimeSpan.FromHours(8);
@@ -47,12 +47,19 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 
+
 // ----------------------------------------------------
-// 4) Inyección de dependencias (solo lo que usas hoy)
-//    *No* registramos servicios de Cajas/POS.
+// 4) Inyección de dependencias
 // ----------------------------------------------------
 builder.Services.AddScoped<UsersRepository>();
 builder.Services.AddScoped<AuthService>();
+
+// Necesario para /Ventas/PuntoDeVenta
+builder.Services.AddScoped<ICajaService, CajaService>();
+
+builder.Services.AddScoped<IVentaService, VentaService>(); // ? NUEVO
+
+builder.Services.AddScoped<IProductosService, ProductosService>();
 
 var app = builder.Build();
 
@@ -67,19 +74,20 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ----------------------------------------------------
-// 6) Rutas
-//    - Ruta por defecto: muestra el Login.
-//    - Sin alias /Ventas/PuntoDeVenta (lo eliminamos).
-// ----------------------------------------------------
+Rotativa.AspNetCore.RotativaConfiguration.Setup(app.Environment.WebRootPath);
+
+// APP (si la quieres con prefijo /app)
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Auth}/{action=Login}/{id?}");
+    name: "app",
+    pattern: "app/{controller=Ventas}/{action=PuntoDeVenta}/{id?}");
+
+// WEBSITE por defecto ("/")
+app.MapControllerRoute(
+    name: "website",
+    pattern: "{controller=Website}/{action=Index}/{id?}");
 
 app.Run();

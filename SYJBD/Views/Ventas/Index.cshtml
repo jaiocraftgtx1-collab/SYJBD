@@ -1,0 +1,276 @@
+﻿@using SYJBD.Models.Ventas
+@model VentaListaVM
+@{
+    ViewData["Title"] = "Lista de ventas";
+    var f = Model.Filtro;
+
+    // valores ISO para el backend (hidden)
+    string isoDesde = f.Desde?.ToString("yyyy-MM-dd") ?? "";
+    string isoHasta = f.Hasta?.ToString("yyyy-MM-dd") ?? "";
+
+    // valores visibles dd/MM/yyyy para el usuario
+    string uiDesde = f.Desde?.ToString("dd/MM/yyyy") ?? "";
+    string uiHasta = f.Hasta?.ToString("dd/MM/yyyy") ?? "";
+}
+
+<div class="content">
+    <div class="card card-soft" style="margin-bottom:14px;">
+        <div class="card-header">
+            <h2 class="card-title">Lista de ventas</h2>
+            <div class="actions-row">
+                <a class="btn btn-xs btn-ghost" href="@Url.Action("Index", "Ventas")" title="Borrar filtros">
+                    <i class="bi bi-eraser"></i> Borrar
+                </a>
+                <button class="btn btn-xs btn-primary" form="frmVentas" type="submit">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </div>
+        </div>
+
+        @* Advertencia por fechas (desde el controlador) *@
+        @if (ViewBag.WarnFechas is string warn && !string.IsNullOrWhiteSpace(warn))
+        {
+            <div class="alert alert-warning" role="alert" style="margin:12px 16px 0;">
+                <i class="bi bi-exclamation-triangle"></i> @warn
+            </div>
+        }
+
+        <!-- LAYOUT: 2 columnas (izq: Fechas | der: Filtros) -->
+        <form id="frmVentas" method="get" style="padding:12px 14px 16px;">
+            <div class="filters-grid">
+                <!-- IZQUIERDA: Fechas (vertical, alto completo) -->
+                <div class="card filters-left">
+                    <div class="crx-form crx-form--1">
+                        <label>
+                            <span>Desde</span>
+                            <!-- input nativo con icono de calendario -->
+                            <input type="date"
+                                   class="crx-inp date-es"
+                                   value="@(f.Desde?.ToString("yyyy-MM-dd") ?? "")"
+                                   data-hidden="#DesdeIso" />
+                            <input type="hidden" id="DesdeIso" name="Desde" value="@(f.Desde?.ToString("yyyy-MM-dd") ?? "")" />
+                        </label>
+
+                        <label>
+                            <span>Hasta</span>
+                            <input type="date"
+                                   class="crx-inp date-es"
+                                   value="@(f.Hasta?.ToString("yyyy-MM-dd") ?? "")"
+                                   data-hidden="#HastaIso" />
+                            <input type="hidden" id="HastaIso" name="Hasta" value="@(f.Hasta?.ToString("yyyy-MM-dd") ?? "")" />
+                        </label>
+                    </div>
+                </div>
+
+
+                <!-- DERECHA: Filtros -->
+                <div class="card filters-right">
+                    <div class="crx-form crx-form--2">
+                        <!-- TIENDA -->
+                        <div class="fd-wrap" data-fd name="Tienda" data-current="@(f.Tienda ?? "TODOS")">
+                            <span class="fd-label">Tienda</span>
+                            <input type="hidden" name="Tienda" value="@(f.Tienda ?? "TODOS")" />
+                            <button type="button" class="btn fd-btn">
+                                <span class="fd-caption">@((f.Tienda ?? "TODOS"))</span>
+                                <i class="bi bi-caret-down-fill"></i>
+                            </button>
+                            <div class="fd-menu">
+                                <input class="fd-search" type="text" placeholder="Escriba..." />
+                                <ul class="fd-list">
+                                    @foreach (var it in Model.Combos.Tiendas)
+                                    {
+                                        <li data-value="@it">@it</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- VENDEDOR -->
+                        <div class="fd-wrap" data-fd name="Vendedor" data-current="@(f.Vendedor ?? "TODOS")">
+                            <span class="fd-label">Vendedor</span>
+                            <input type="hidden" name="Vendedor" value="@(f.Vendedor ?? "TODOS")" />
+                            <button type="button" class="btn fd-btn">
+                                <span class="fd-caption">@((f.Vendedor ?? "TODOS"))</span>
+                                <i class="bi bi-caret-down-fill"></i>
+                            </button>
+                            <div class="fd-menu">
+                                <input class="fd-search" type="text" placeholder="Escriba..." />
+                                <ul class="fd-list">
+                                    @foreach (var it in Model.Combos.Vendedores)
+                                    {
+                                        <li data-value="@it">@it</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- CLIENTE -->
+                        <div class="fd-wrap" data-fd name="Cliente" data-current="@(f.Cliente ?? "TODOS")">
+                            <span class="fd-label">Cliente</span>
+                            <input type="hidden" name="Cliente" value="@(f.Cliente ?? "TODOS")" />
+                            <button type="button" class="btn fd-btn">
+                                <span class="fd-caption">@((f.Cliente ?? "TODOS"))</span>
+                                <i class="bi bi-caret-down-fill"></i>
+                            </button>
+                            <div class="fd-menu">
+                                <input class="fd-search" type="text" placeholder="Escriba..." />
+                                <ul class="fd-list">
+                                    @foreach (var it in Model.Combos.Clientes)
+                                    {
+                                        <li data-value="@it">@it</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- DOCUMENTO -->
+                        <div class="fd-wrap" data-fd name="TipoDoc" data-current="@(f.TipoDoc ?? "TODOS")">
+                            <span class="fd-label">Documento</span>
+                            <input type="hidden" name="TipoDoc" value="@(f.TipoDoc ?? "TODOS")" />
+                            <button type="button" class="btn fd-btn">
+                                <span class="fd-caption">@((f.TipoDoc ?? "TODOS"))</span>
+                                <i class="bi bi-caret-down-fill"></i>
+                            </button>
+                            <div class="fd-menu">
+                                <input class="fd-search" type="text" placeholder="Escriba..." />
+                                <ul class="fd-list">
+                                    @foreach (var it in Model.Combos.TiposDoc)
+                                    {
+                                        <li data-value="@it">@it</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- ESTADO -->
+                        <div class="fd-wrap" data-fd name="Estado" data-current="@(f.Estado ?? "TODOS")">
+                            <span class="fd-label">Estado</span>
+                            <input type="hidden" name="Estado" value="@(f.Estado ?? "TODOS")" />
+                            <button type="button" class="btn fd-btn">
+                                <span class="fd-caption">@((f.Estado ?? "TODOS"))</span>
+                                <i class="bi bi-caret-down-fill"></i>
+                            </button>
+                            <div class="fd-menu">
+                                <input class="fd-search" type="text" placeholder="Escriba..." />
+                                <ul class="fd-list">
+                                    @foreach (var it in Model.Combos.Estados)
+                                    {
+                                        <li data-value="@it">@it</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <script>
+            (function () {
+              // sincroniza el value del input[type=date] con el hidden ISO
+              document.querySelectorAll('.date-es').forEach(inp => {
+                const hiddenSel = inp.getAttribute('data-hidden');
+                const hid = hiddenSel ? document.querySelector(hiddenSel) : null;
+                const sync = () => { if (hid) hid.value = inp.value || ""; };
+                inp.addEventListener('change', sync);
+                sync();
+              });
+
+              // exige ambas fechas si se coloca una (advertencia rápida)
+              const frm = document.getElementById('frmVentas');
+              if (frm) {
+                frm.addEventListener('submit', (e) => {
+                  const d = document.querySelector('#DesdeIso')?.value?.trim();
+                  const h = document.querySelector('#HastaIso')?.value?.trim();
+                  if ((d && !h) || (!d && h)) {
+                    e.preventDefault();
+                    alert('Debes colocar ambas fechas: Desde y Hasta.');
+                  }
+                });
+              }
+            })();
+        </script>
+
+    </div>
+
+    <!-- Tabla -->
+    <div class="card" style="padding:10px 14px 4px;">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>NRO.</th>
+                        <th>FECHA/HORA</th>
+                        <th>NÚMERO DOC</th>
+                        <th class="ta-right">TOTAL</th>
+                        <th>VENDEDOR(A)</th>
+                        <th>CLIENTE</th>
+                        <th>TIENDA</th>
+                        <th>CAJA</th>
+                        <th>ESTADO</th>
+                        <th class="ta-center">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var it in Model.Paged.Items)
+                    {
+                        var nroDoc = !string.IsNullOrWhiteSpace(it.NumeroDoc)
+                        ? it.NumeroDoc
+                        : $"{(it.Serie ?? "").Trim()}-{(it.Nro.ToString()).Trim()}";
+
+                        <tr>
+                            <td>@it.IdVenta</td>
+                            <td>@it.FechaVenta</td>
+                            <td>@nroDoc</td>
+                            <td class="ta-right">@it.Monto.ToString("N2")</td>
+                            <td>@it.Vendedor</td>
+                            <td>@it.Cliente</td>
+                            <td>@it.Tienda</td>
+                            <td>@it.Caja</td>
+                            <td>
+                                @if ((it.Estado ?? "").ToUpper() == "ATENDIDO")
+                                {
+                                    <span class="badge ok">ATENDIDO</span>
+                                }
+                                else if ((it.Estado ?? "").ToUpper().Contains("ANUL"))
+                                {
+
+                                    <span class="badge danger">ANULADO</span>
+                                }
+                                else
+                                {
+
+                                    <span class="badge">@it.Estado</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a class="btn-icon success"
+                                       href="javascript:void(0)"
+                                       data-modal-url="@Url.Action("VerVenta", "Ventas", new { id = it.Nro })"
+                                       title="Ver">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+
+
+
+                                    <a class="btn-icon ghost" data-modal-url="@Url.Action("Imprimir", "Ventas", new { id = it.Nro })" title="Imprimir">
+                                        <i class="bi bi-receipt"></i>
+                                    </a>
+                                    <a class="btn-icon danger" href="javascript:void(0)"
+                                       data-modal-url="@Url.Action("Anular", "Ventas", new { id = it.Nro })" title="Anular venta">
+                                        <i class="bi bi-x-lg"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+
+            @await Component.InvokeAsync("Pager", Model.Paged)
+            <div class="meta">Mostrando @Model.Paged.Items.Count de @Model.Paged.TotalItems ítems</div>
+        </div>
+    </div>
+</div>
+@await Html.PartialAsync("~/Views/Shared/_ModalHost.cshtml")

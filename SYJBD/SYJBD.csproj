@@ -13,7 +13,15 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+    <PackageReference Include="Rotativa.AspNetCore" Version="1.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\ServiceDependencies\SYJBD20250928180945 - Zip Deploy\" />
+    <Folder Include="wwwroot\website\img\logo\" />
+    <Folder Include="wwwroot\website\img\productos\" />
   </ItemGroup>
 
 </Project>

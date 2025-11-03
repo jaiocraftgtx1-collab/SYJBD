@@ -1,27 +1,35 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SYJBD.Models;
+using System.Data;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SYJBD.Data
 {
     /// <summary>
-    /// DbContext de la app. Por ahora usas CRUD de Unidades y lista de Productos,
-    /// así que dejamos mapeos para esas entidades. Si más adelante retomas Cajas/POS,
-    /// puedes reactivar sus DbSet y configuraciones.
+    /// DbContext de la app.
     /// </summary>
     public class ErpDbContext : DbContext
     {
         public ErpDbContext(DbContextOptions<ErpDbContext> options) : base(options) { }
 
-        // --- Entidades que hoy usas en producción ---
+        // Entidades en uso
         public DbSet<Producto> Productos => Set<Producto>();
         public DbSet<Unidad> Unidades => Set<Unidad>();
+        public DbSet<Venta> Ventas => Set<Venta>();
+        public DbSet<Kardex> Kardex => Set<Kardex>();
+        public DbSet<Egreso> Egresos => Set<Egreso>();
+        public DbSet<Tienda> Tiendas => Set<Tienda>();
+        public DbSet<TipoEgreso> TipoEgresos => Set<TipoEgreso>();
 
-        // --- (Opcional futuro) Si mantienes los modelos en el proyecto,
-        //     puedes habilitar estos DbSet cuando vuelvas a trabajar Cajas/POS.
-        // public DbSet<Caja>    Cajas    => Set<Caja>();
-        // public DbSet<Venta>   Ventas   => Set<Venta>();
-        // public DbSet<Egreso>  Egresos  => Set<Egreso>();
-        // public DbSet<Kardex>  Kardex   => Set<Kardex>();
+        // Cajas (necesario para /Ventas/PuntoDeVenta)
+        public DbSet<Caja> Cajas => Set<Caja>();
+        public async Task EnsureOpenAsync(CancellationToken ct = default)
+        {
+            var cn = Database.GetDbConnection();
+            if (cn.State != ConnectionState.Open)
+                await cn.OpenAsync(ct);
+        }
 
         protected override void OnModelCreating(ModelBuilder mb)
         {
@@ -29,21 +37,20 @@ namespace SYJBD.Data
 
             // ------------------------------------------------------------
             // Producto
+            // (Si tu clase Producto ya tiene DataAnnotations, no necesitas mapear aquí)
             // ------------------------------------------------------------
-            // Si tu clase Producto ya tiene [Table]/[Column], no hace falta más.
-            // De lo contrario, aquí puedes ajustar nombres y tipos.
-            // Ejemplo (descomenta y adapta si lo necesitas):
+            // Ejemplo (descomenta si lo requieres):
             // mb.Entity<Producto>(e =>
             // {
             //     e.ToTable("vta_producto");
             //     e.HasKey(p => p.IdProducto);
             //     e.Property(p => p.IdProducto).HasColumnName("id_producto");
             //     e.Property(p => p.Nombre).HasColumnName("nombre").HasMaxLength(200);
-            //     // ...otros campos...
+            //     // ...
             // });
 
             // ------------------------------------------------------------
-            // Unidad  (este sí lo mapeamos explícito porque ya lo usas en CRUD)
+            // Unidad (CRUD activo)
             // ------------------------------------------------------------
             mb.Entity<Unidad>(e =>
             {
@@ -62,20 +69,30 @@ namespace SYJBD.Data
             });
 
             // ------------------------------------------------------------
-            // Si más adelante vuelves a Cajas/POS, aquí puedes setear
-            // precisión de decimales y controlar fechas si hace falta.
+            // Caja (lectura para listado de punto de venta)
             // ------------------------------------------------------------
-            // mb.Entity<Caja>(e =>
-            // {
-            //     e.Property(p => p.MontoApertura).HasColumnType("decimal(12,2)");
-            //     e.Property(p => p.MontoCierre).HasColumnType("decimal(12,2)");
-            //     // ...
-            // });
-            // mb.Entity<Venta>(e =>
-            // {
-            //     e.Property(p => p.Total).HasColumnType("decimal(12,2)");
-            //     // ...
-            // });
+            mb.Entity<Caja>(e =>
+            {
+                e.ToTable("vta_caja");
+                e.HasKey(x => x.IdCaja);
+
+                e.Property(x => x.IdCaja).HasColumnName("id_caja");
+                e.Property(x => x.IdTienda).HasColumnName("id_tienda");
+                e.Property(x => x.IdUsuarioApertura).HasColumnName("id_usuario_apertura");
+                e.Property(x => x.FechaApertura).HasColumnName("fecha_apertura");
+
+                e.Property(x => x.MontoApertura).HasColumnName("monto_apertura");
+                e.Property(x => x.IdUsuarioCierre).HasColumnName("id_usuario_cierre");
+                e.Property(x => x.FechaCierre).HasColumnName("fecha_cierre");
+                e.Property(x => x.MontoCierre).HasColumnName("monto_cierre");
+
+                e.Property(x => x.TotalIngresos).HasColumnName("total_ingresos");
+                e.Property(x => x.TotalGastos).HasColumnName("total_gastos");
+                e.Property(x => x.EfectivoEsperado).HasColumnName("efectivo_esperado");
+                e.Property(x => x.DiferenciaCaja).HasColumnName("diferencia_caja");
+                e.Property(x => x.Observacion).HasColumnName("observacion");
+            });
         }
     }
 }
+

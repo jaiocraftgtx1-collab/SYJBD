@@ -1,0 +1,957 @@
+﻿@using System.Security.Claims
+@{
+    ViewData["Title"] = "Nueva venta";
+
+    var combos = ViewBag.Combos;
+
+    string idCaja = Convert.ToString(combos?.IdCaja ?? Context.Request.Query["idcaja"]) ?? "";
+    string idTienda = Convert.ToString(combos?.IdTienda ?? Context.Request.Query["idtienda"]) ?? "";
+
+    // 1º: llegó por query
+    string? idUsuarioQuery = Convert.ToString(Context.Request.Query["idusuario"]);
+    // 2º: claim de sesión
+    string? idUsuarioClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    // valor final (no-null)
+    string idUsuario = !string.IsNullOrWhiteSpace(idUsuarioQuery) ? idUsuarioQuery! : (idUsuarioClaim ?? "");
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/nuevaventa.css" asp-append-version="true" />
+}
+<input type="hidden" id="hidIdCaja" value="@idCaja" />
+<input type="hidden" id="hidIdTienda" value="@idTienda" />
+<input type="hidden" id="hidIdUsuario" value="@idUsuario" />
+
+
+<!-- ====== Pago (ocultos listos para enviar) ====== -->
+<input type="hidden" id="hidMP1">
+<input type="hidden" id="hidMontoMP1">
+<input type="hidden" id="hidMP2">
+<input type="hidden" id="hidMontoMP2">
+
+
+<!-- ==================== CABECERA ==================== -->
+<div class="container-xxl">
+    <h2 class="mb-3">Nueva venta</h2>
+
+    <div class="card shadow-sm mb-3 nv-card">
+        <div class="card-body">
+
+            <!-- Tipo de documento -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Tipo de documento</label>
+                <div class="btn-group" role="group" aria-label="Tipo documento">
+                    <button type="button" class="btn btn-outline-primary rounded-pill px-3 me-1 doc-btn active" data-tipo="NV">NV</button>
+                    <button type="button" class="btn btn-outline-primary rounded-pill px-3 me-1 doc-btn" data-tipo="B">B</button>
+                    <button type="button" class="btn btn-outline-primary rounded-pill px-3 doc-btn" data-tipo="F">F</button>
+                </div>
+                <input type="hidden" id="txtTipoDocumento" value="NV" />
+            </div>
+
+            <!-- Auxiliares -->
+            <div class="row g-2 nv-aux">
+                <div class="col-md-3">
+                    <label class="form-label">Fecha</label>
+                    <input class="form-control" value="@DateTime.Now.ToString("dd/MM/yyyy hh:mm tt")" disabled />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tienda</label>
+                    <input class="form-control" value="@idTienda" disabled />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Caja</label>
+                    <input class="form-control" value="@idCaja" disabled />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Vendedor (id)</label>
+                    <input class="form-control" value="@idUsuario" disabled />
+                </div>
+            </div>
+
+            <!-- Cliente + Moneda -->
+            <div class="row g-2 align-items-end mt-1">
+                <div class="col-md-9">
+                    <label class="form-label">Cliente</label>
+                    <div class="input-group">
+                        <input class="form-control" id="txtIdCliente" value="SYJ0007" disabled style="max-width:100px">
+                        <input class="form-control" id="txtClienteNombre" value="CLIENTE SYJ STYLE (77777777)" disabled>
+                        <button class="btn btn-outline-secondary" type="button" id="btnClienteGenerico" title="Cliente genérico">
+                            <i class="bi bi-person"></i>
+                        </button>
+                        <button class="btn btn-primary" type="button" id="btnClienteBuscar" title="Buscar cliente">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3 nv-aux">
+                    <label class="form-label">Moneda</label>
+                    <input class="form-control" value="SOLES" disabled />
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- ================= /CABECERA ================= -->
+<!-- ============== DETALLE + TOTALES/PAGO ============== -->
+<div class="container-xxl">
+    <div class="nv-row">
+        <!-- grid: columna doble en desktop, apilado en móvil -->
+        <!-- ---------- DETALLE ---------- -->
+        <section class="card shadow-sm nv-card">
+            <div class="card-body">
+
+                <div class="d-flex gap-2 mb-2">
+                    <button class="btn btn-primary" id="btnAddProductos">
+                        <i class="bi bi-plus-circle me-1"></i>Agregar productos
+                    </button>
+                    <button class="btn btn-outline-primary" id="btnScanCodes" title="Escanear códigos">
+                      <i class="bi bi-upc-scan me-1"></i> Escanear
+                    </button>
+
+
+                    <button class="btn btn-outline-secondary" id="btnLimpiar">
+                        <i class="bi bi-eraser me-1"></i>Limpiar
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="tbl-detalle table-sm align-middle mb-0">
+                        <!-- Colgroup: define proporciones de columnas.
+                             En móvil el CSS fuerza 46/18/18/18/0% (acción oculta). -->
+                        <colgroup>
+                            <col> <!-- PRODUCTO (flexible) -->
+                            <col style="width:var(--det-q)">
+                            <col style="width:var(--det-p)">
+                            <col style="width:var(--det-i)">
+                            <col style="width:var(--det-act)">
+                        </colgroup>
+
+                        <thead class="nv-th">
+                            <tr>
+                                <th>PRODUCTO</th>
+                                <th class="text-center">CANT</th>
+                                <th class="text-center">P.U</th>
+                                <th class="text-end">TOTAL</th>
+                                <!-- Encabezado de ACCIÓN pintado también en tablet/móvil -->
+                                <th class="det-act text-center"><i class="bi bi-trash"></i></th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="gridDetalle"><!-- filas se inyectan por JS --></tbody>
+                    </table>
+                </div>
+
+                <!-- Separador solo móvil, para respiración antes de Totales -->
+
+            </div>
+        </section>
+        <!-- -------- /DETALLE -------- -->
+        <!-- ---------- TOTALES + PAGO ---------- -->
+        <aside class="card shadow-sm nv-card">
+            <div class="card-body">
+
+                <!-- Totales -->
+                    <!-- Totales -->
+                <hr class="my-2" />
+                    <div class="mb-3 nv-totals">
+                      <div class="d-flex justify-content-between small">
+                        <span>ITEMS</span><span id="totItems">0</span>
+                      </div>
+                      <div class="d-flex justify-content-between small">
+                        <span>IGV 18%</span><span id="totIGV">0.00</span>
+                      </div>
+                      <div class="d-flex justify-content-between small">
+                        <span>SUBTOTAL</span><span id="totSub">0.00</span>
+                      </div>
+                    
+                      <div class="d-flex justify-content-between fs-6 fw-bold">
+                        <span>TOTAL A PAGAR</span><span id="totTotal">0.00</span>
+                      </div>
+                      <hr class="my-2" />
+                    </div>
+
+
+                <!-- Pago -->
+                <div class="mb-3">
+                    <h6 class="fw-semibold mb-2">MÉTODO DE PAGO</h6>
+                    <button class="btn w-100 mb-2 btn-outline-primary" id="btnPagoEfectivo">
+                        <i class="bi bi-cash-coin me-1"></i> EFECTIVO
+                    </button>
+                    <button class="btn w-100 mb-2 btn-outline-primary" id="btnPagoDeposito">
+                        <i class="bi bi-bank me-1"></i> DEPÓSITO
+                    </button>
+                    <button class="btn w-100 btn-outline-primary" id="btnPagoMixto">
+                        <i class="bi bi-shuffle me-1"></i> MIXTO
+                    </button>
+                </div>
+
+                <!-- Resumen de pago (dinámico) -->
+                <div id="pagoResumen" class="alert alert-info py-2 px-3 small d-none mt-2"></div>
+
+                <!-- Registrar -->
+                <button class="btn btn-success w-100 mt-2" id="btnRegistrar">
+                    <i class="bi bi-check-circle me-1"></i> REGISTRAR VENTA
+                </button>
+            </div>
+        </aside>
+        <!-- -------- /TOTALES + PAGO -------- -->
+
+    </div>
+</div>
+
+@await Html.PartialAsync("~/Views/Shared/_ModalHost.cshtml")
+
+
+
+
+@section Scripts {
+    <script>
+        /* ================== helpers ================== */
+        const CUR = 's/ ';
+        const fmt2   = n => (Number(n||0)).toFixed(2);
+        const onlyInt= v => (v||'').replace(/\D+/g,'');
+        const onlyDec= v => {
+          v = (v||'').replace(/,/g,'.').replace(/[^0-9.]/g,'');
+          const parts = v.split('.');
+          if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+          const [ent, dec=''] = v.split('.');
+          return ent.replace(/^0+(\d)/,'$1') + (v.includes('.') ? '.' + dec.slice(0,2) : '');
+        };
+        function html(s){ return (s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+        /* Map tipo/serie UI -> backend */
+        function mapTipoYSerie(uiTipo){
+          switch((uiTipo||'NV').toUpperCase()){
+            case 'B': return { tipo:'BLT', serie:'B001'  };
+            case 'F': return { tipo:'FCT', serie:'F001'  };
+            default : return { tipo:'NTV', serie:'NT001' };
+          }
+        }
+
+        /* ========== Modal Host (util) ========== */
+        let _onCloseHost = null;
+
+        function abrirHostParcial(url, onClose){
+          return fetch(url, {
+              headers: { 'X-Requested-With':'XMLHttpRequest' },
+              credentials: 'same-origin'   // <— muy importante si usas cookie auth
+          })
+          .then(async r => {
+            if (r.ok) return r.text();
+            const txt = await r.text().catch(()=> '');
+            console.error('Error cargando parcial', r.status, txt);
+            return `<div class="p-3 text-danger">No se pudo cargar (HTTP ${r.status}).</div>`;
+          })
+          .then(h => abrirHost(h, onClose));
+        }
+
+
+        function abrirHost(htmlContent, onClose){
+          const host = document.getElementById('app-modal');
+          const body = document.getElementById('app-modal-body');
+          _onCloseHost = (typeof onClose === 'function') ? onClose : null;
+          body.innerHTML = htmlContent;
+          host.classList.remove('app-modal_hidden');
+          host.setAttribute('aria-hidden','false');
+          host.querySelectorAll('[data-modal-close]').forEach(x=> x.addEventListener('click', cerrarHost));
+          host.querySelector('.app-modal__backdrop').addEventListener('click', cerrarHost);
+
+        }
+        function cerrarHost(){
+          const host = document.getElementById('app-modal');
+          const body = document.getElementById('app-modal-body');
+          body.innerHTML = '';
+          host.classList.add('app-modal_hidden');
+          host.setAttribute('aria-hidden','true');
+          try { if (_onCloseHost) _onCloseHost(); } finally { _onCloseHost = null; }
+        }
+        function toast(msg){
+          const el = document.createElement('div');
+          el.className = 'position-fixed bottom-0 end-0 p-3';
+          el.innerHTML = `<div class="toast align-items-center text-bg-primary border-0 show">
+              <div class="d-flex"><div class="toast-body">${html(msg)}</div>
+              <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
+          document.body.appendChild(el);
+          setTimeout(()=> el.remove(), 2500);
+        }
+
+        document.getElementById('btnScanCodes')?.addEventListener('click', () => {
+          abrirHostParcial('@Url.Action("LectorCodeBar", "Ventas")');
+        });
+
+
+
+
+        /* ======== Estado de pago + resumen ======== */
+        const pago = { tipo: null, mp1: null, monto1: 0, mp2: null, monto2: 0 };
+
+        function syncPagoHidden(){
+          document.getElementById('hidMP1').value      = pago.mp1 || '';
+          document.getElementById('hidMontoMP1').value = (pago.monto1 || 0).toString();
+          document.getElementById('hidMP2').value      = pago.mp2 || '';
+          document.getElementById('hidMontoMP2').value = (pago.monto2 || 0).toString();
+        }
+
+        function renderPagoResumen(){
+          const box = document.getElementById('pagoResumen');
+          if (!pago.tipo) { box.classList.add('d-none'); box.innerHTML=''; syncPagoHidden(); return; }
+          const fmt = n => `${CUR}${fmt2(n)}`;
+          let s = (pago.tipo==='EFECTIVO' || pago.tipo==='DEPOSITO')
+                  ? `${pago.mp1}: ${fmt(pago.monto1)}`
+                  : `${pago.mp1}: ${fmt(pago.monto1)}<br>${pago.mp2}: ${fmt(pago.monto2)}`;
+          box.classList.remove('d-none'); box.innerHTML=s; syncPagoHidden();
+        }
+        function resetPago(){ pago.tipo=null; pago.mp1=null; pago.monto1=0; pago.mp2=null; pago.monto2=0; renderPagoResumen(); }
+        function setPagoButtonsEnabled(enabled){
+          const box = document.getElementById('pagoResumen');
+          const btns = ['btnPagoEfectivo','btnPagoDeposito','btnPagoMixto'].map(id=>document.getElementById(id));
+          btns.forEach(b=>{
+            b.disabled = !enabled;
+            b.classList.toggle('btn-outline-primary', enabled);
+            b.classList.toggle('btn-outline-secondary', !enabled);
+          });
+          if(!enabled){ box.classList.add('d-none'); box.innerHTML=''; }
+        }
+
+
+
+
+        /* ==== Cliente y doc ==== */
+        document.querySelectorAll('.doc-btn').forEach(btn=>{
+          btn.addEventListener('click',()=>{
+            document.querySelectorAll('.doc-btn').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('txtTipoDocumento').value = btn.dataset.tipo;
+          });
+        });
+        document.getElementById('btnClienteGenerico').addEventListener('click',()=>{
+          document.getElementById('txtIdCliente').value='SYJ0007';
+          document.getElementById('txtClienteNombre').value='CLIENTE SYJ STYLE (77777777)';
+          resetPago(); recalcular();
+        });
+        document.getElementById('btnClienteBuscar').addEventListener('click',()=>{ resetPago(); recalcular(); abrirModalCliente(); });
+
+        async function abrirModalCliente(){
+          abrirHost(`
+            <h5 class="mb-3">Seleccionar cliente</h5>
+            <div class="input-group mb-2">
+              <input id="cli_q" class="form-control" placeholder="Buscar por nombre o RUC/DNI..." />
+              <button id="cli_btn" class="btn btn-primary"><i class="bi bi-search"></i></button>
+              <button id="cli_new" class="btn btn-outline-success"><i class="bi bi-person-plus"></i> Nuevo</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0 tbl-detalle">
+                <thead class="table-dark"><tr><th>Cliente</th><th style="width:160px" class="text-end">RUC/DNI</th></tr></thead>
+                <tbody id="cli_rows"></tbody>
+              </table>
+            </div>
+            <div class="text-end"><button class="btn btn-secondary" data-modal-close>Cerrar</button></div>
+          `);
+          const q = document.getElementById('cli_q');
+          const btn = document.getElementById('cli_btn');
+          const rows = document.getElementById('cli_rows');
+
+          const cargar = async (term) => {
+            rows.innerHTML = `<tr><td colspan="2">Buscando...</td></tr>`;
+            const res = await fetch(`/api/ventas/buscar-clientes?q=${encodeURIComponent(term||'')}`);
+            const data = res.ok ? await res.json() : [];
+            if (!Array.isArray(data) || data.length===0){ rows.innerHTML = `<tr><td colspan="2">Sin resultados</td></tr>`; return; }
+            rows.innerHTML = data.map(c => `
+              <tr class="cursor-pointer" data-id="${c.id}" data-rs="${html(c.nombre)}" data-doc="${c.ruc}">
+                <td>${html(c.nombre)}</td><td class="text-end">${c.ruc}</td>
+              </tr>`).join('');
+            rows.querySelectorAll('tr').forEach(tr=>{
+              tr.addEventListener('click',()=>{
+                document.getElementById('txtIdCliente').value = tr.dataset.id;
+                document.getElementById('txtClienteNombre').value = `${tr.dataset.rs} (${tr.dataset.doc||''})`;
+                cerrarHost(); resetPago(); recalcular();
+              });
+            });
+          };
+          q.addEventListener('input',()=>cargar(q.value));
+          btn.addEventListener('click',()=>cargar(q.value));
+          cargar('');
+        }
+
+        /* ================== Productos (modal) ================== */
+        document.getElementById('btnAddProductos').addEventListener('click', () => {
+          // id|talla de cada fila actual del detalle
+          window.__detalleKeys = Array.from(document.querySelectorAll('#gridDetalle tr'))
+            .map(tr => `${tr.dataset.id}|${tr.dataset.talla || ''}`);
+          abrirModalProductos(); // o el open de tu modal
+        });
+
+        function abrirModalProductos() {
+          abrirHost(`
+            <h5 class="mb-3">Seleccionar productos</h5>
+            <div class="d-flex gap-2 mb-2">
+              <input id="prod_q" class="form-control" placeholder="Código o nombre..." autocomplete="off">
+              <button id="prod_btn" class="btn btn-primary"><i class="bi bi-search"></i></button>
+            </div>
+            <div id="prod_rows" class="list-group border rounded" style="max-height:55vh;overflow:auto;"></div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <button class="btn btn-secondary" data-modal-close>Cerrar</button>
+              <button id="prod_add" class="btn btn-primary" disabled>Agregar (0)</button>
+            </div>
+          `);
+
+          const $q   = document.getElementById('prod_q');
+          const $btn = document.getElementById('prod_btn');
+          const $rows= document.getElementById('prod_rows');
+          const $add = document.getElementById('prod_add');
+
+          const selected = new Map();
+          const keyOf = (p) => `${p.idProducto}|${p.idTalla||''}`;
+          const fmtLocal = (n) => (Number(n||0)).toLocaleString('es-PE',{minimumFractionDigits:2, maximumFractionDigits:2});
+
+          const setAddState = () => { const n = selected.size; $add.textContent = `Agregar (${n})`; $add.disabled = n===0; };
+
+          $rows.addEventListener('change', (ev) => {
+            const chk = ev.target;
+            if (!chk.classList.contains('sel')) return;
+            const p = JSON.parse(chk.dataset.p);
+            const k = keyOf(p);
+            if (chk.checked) {
+              selected.set(k, {
+                id:     p.idProducto,
+                nombre: p.nombre,
+                talla:  p.idTalla || '',
+                precio: Number(p.precioUnit)||0,
+                und:    p.idUnidad || p.und || 'UND'
+              });
+            } else {
+              selected.delete(k);
+            }
+            setAddState();
+          });
+
+          function render(list){
+            $rows.innerHTML = '';
+            const frag = document.createDocumentFragment();
+            list.forEach(p => {
+              const k = keyOf(p);
+              const row = document.createElement('label');
+              row.className = 'list-group-item d-flex align-items-center gap-3';
+
+              const chk = document.createElement('input');
+              chk.type = 'checkbox'; chk.className = 'form-check-input sel';
+              chk.checked = selected.has(k); chk.dataset.p = JSON.stringify(p);
+              row.appendChild(chk);
+
+              const box = document.createElement('div');
+              box.className = 'flex-grow-1';
+              box.innerHTML = `<div class="fw-semibold fs-6">${html(p.nombre)} <span class="text-muted">(${p.idProducto})</span></div>
+                               <div class="fs-6">${p.idTalla ? html(p.idTalla) : ''}</div>`;
+              row.appendChild(box);
+
+              const price = document.createElement('div');
+              price.className = 'fw-bold fs-5 text-nowrap';
+              price.textContent = `S/ ${fmtLocal(p.precioUnit||0)}`;
+              row.appendChild(price);
+
+              frag.appendChild(row);
+            });
+            if (list.length === 0) {
+              const empty = document.createElement('div');
+              empty.className = 'text-center text-muted py-4';
+              empty.textContent = 'Sin resultados';
+              frag.appendChild(empty);
+            }
+            $rows.appendChild(frag);
+          }
+
+          let currentAbort = null, lastQuery = '';
+          const debounce = (fn, ms=250) => { let t; return (...a)=>{clearTimeout(t); t=setTimeout(()=>fn(...a),ms);}};
+          const cargar = async () => {
+            const q = ($q.value||'').trim();
+            if (q === lastQuery && $rows.children.length) return;
+            lastQuery = q;
+            if (currentAbort) currentAbort.abort();
+            currentAbort = new AbortController();
+            $rows.innerHTML = `<div class="text-center text-muted py-3">Buscando...</div>`;
+            try{
+              const url = `/api/ventas/buscar-productos?q=${encodeURIComponent(q)}`;
+              const res = await fetch(url, {signal: currentAbort.signal});
+              const data = res.ok ? await res.json() : [];
+              render(Array.isArray(data) ? data : []);
+            }catch(e){
+              if (e.name !== 'AbortError') $rows.innerHTML = `<div class="text-center text-danger py-3">Error al buscar</div>`;
+            }
+          };
+          $btn.addEventListener('click', cargar);
+          $q.addEventListener('input', debounce(cargar, 250));
+          cargar();
+
+          $add.addEventListener('click', ()=>{ selected.forEach(p => agregarFilaDetalle(p)); cerrarHost(); });
+        }
+
+        /* =============== Grilla detalle =============== */
+        const grid = document.getElementById('gridDetalle');
+
+        function agregarFilaDetalle(p){
+          // evita duplicados por id + talla
+          if (grid.querySelector(`tr[data-id="${p.id}"][data-talla="${p.talla||''}"]`)) return;
+
+          const tr = document.createElement('tr');
+          tr.dataset.id    = p.id;
+          tr.dataset.talla = p.talla || '';
+          tr.dataset.und   = p.und || 'UND';
+
+          tr.innerHTML = `
+            <td class="det-prod">
+              <div class="p-nom">${html(p.nombre)} <span class="text-muted">(${p.id})</span></div>
+              <div class="p-sub">${p.talla ? html(p.talla) : ''}</div>
+            </td>
+
+            <td class="text-center">
+              <input class="form-control form-control-sm det-cant sel-all" value="1" type="text"
+                     inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-label="Cantidad" />
+            </td>
+
+            <td class="text-center">
+              <input class="form-control form-control-sm det-pre sel-all" value="${fmt2(p.precio)}" type="text"
+                     inputmode="decimal" enterkeyhint="done" autocomplete="off" aria-label="Precio unitario" />
+            </td>
+
+            <td class="text-end">
+              <input class="form-control form-control-sm det-imp det-imp-inp" value="${fmt2(p.precio)}" type="text"
+                     inputmode="decimal" readonly tabindex="-1" aria-label="Importe" />
+            </td>
+
+            <td class="text-end det-act">
+              <button class="btn btn-sm btn-outline-danger det-del" type="button" title="Quitar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          `;
+
+          grid.appendChild(tr);
+          bindRow(tr);
+          recalcular();
+        }
+
+
+
+
+        function setImporteCell(tr, value){
+          const el = tr.querySelector('.det-imp');
+          if(!el) return;
+          if (el.tagName === 'INPUT') el.value = fmt2(value); else el.textContent = fmt2(value);
+        }
+
+
+
+        /* ====== Enlazar swipe desde tu bindRow(tr) ======
+           (solo añade la última línea) */
+        function bindRow(tr){
+          const $cant = tr.querySelector('.det-cant');
+          const $pre  = tr.querySelector('.det-pre');
+          const $del  = tr.querySelector('.det-del');
+          const $imp  = tr.querySelector('.det-imp');
+
+          $cant.addEventListener('input', ()=>{
+            $cant.value = onlyInt($cant.value);
+            if(!$cant.value || Number($cant.value)<=0) $cant.value = '1';
+            $imp.value = fmt2(Number($cant.value)*Number($pre.value||0));
+            resetPago();
+            recalcular();
+          });
+
+          $pre.addEventListener('input', ()=>{
+            $pre.value = onlyDec($pre.value);
+            $imp.value = fmt2(Number($cant.value||0)*Number($pre.value||0));
+            resetPago();
+            recalcular();
+          });
+
+          if($del){ // en desktop
+            $del.addEventListener('click', ()=>{
+              tr.remove();
+              resetPago();
+              recalcular();
+            });
+          }
+
+        }
+
+
+
+
+        /* Seleccionar todo al enfocar */
+        document.addEventListener('focusin', (e)=>{ const el=e.target; if(el.classList?.contains('sel-all')) setTimeout(()=>{try{el.select();}catch{}},0); });
+        document.addEventListener('mouseup', (e)=>{ if(e.target.classList?.contains('sel-all')) e.preventDefault(); }, true);
+
+        /* Limpiar con confirmación */
+        document.getElementById('btnLimpiar').addEventListener('click',()=>{
+          if (grid.querySelector('tr') && !confirm('¿Eliminar todos los productos de la lista?')) return;
+          grid.innerHTML = ''; resetPago(); recalcular();
+        });
+
+
+
+
+        /* ================== Pagos ================== */
+        document.getElementById('btnPagoEfectivo').addEventListener('click', ()=>{
+          const total = Number(document.getElementById('totTotal').textContent || 0);
+          pago.tipo='EFECTIVO'; pago.mp1='EFECTIVO'; pago.monto1=total; pago.mp2='-'; pago.monto2=0;
+          renderPagoResumen();
+        });
+
+
+
+        // DEPÓSITO (con logos)
+        document.getElementById('btnPagoDeposito').addEventListener('click', () => {
+          const totalSel = Number(document.getElementById('totTotal').textContent || 0);
+
+          const metodos = [
+            { nombre: 'YAPE',               img: '/activos/metodopago/Yape.svg' },
+            { nombre: 'PLIN',               img: '/activos/metodopago/Plin.svg' },
+            { nombre: 'BCP',                img: '/activos/metodopago/BCP.svg' },
+            { nombre: 'INTERBANK',          img: '/activos/metodopago/Interbank.svg' },
+            { nombre: 'BBVA',               img: '/activos/metodopago/BBVA.svg' },
+            { nombre: 'SCOTIABANK',         img: '/activos/metodopago/Scotiabank.svg' },
+            { nombre: 'BANCO DE LA NACIÓN', img: '/activos/metodopago/BancoNacion.svg' }
+          ];
+
+          const html = `
+            <h5 class="mb-3">Seleccione método de depósito</h5>
+            <div class="mp-grid">
+              ${metodos.map(m => `
+                <button type="button" class="mp-tile dep-btn" data-mp="${m.nombre}">
+                  <img src="${m.img}" alt="${m.nombre}" loading="lazy">
+                </button>
+              `).join('')}
+            </div>
+            <div class="text-muted mt-2">Total a pagar: <strong>${CUR}${fmt2(totalSel)}</strong></div>
+            <div class="text-end mt-3"><button type="button" class="btn btn-secondary" data-modal-close>Volver</button></div>
+          `;
+          abrirHost(html);
+
+          const modalBody = document.getElementById('app-modal-body');
+          modalBody.querySelectorAll('.dep-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+              const metodo = (e.currentTarget.dataset.mp || '').toUpperCase();
+
+              // 🔑 Espejamos en varias claves por compatibilidad
+              pago.tipo   = 'DEPOSITO';
+              pago.metodo = metodo;     // nuevo (por si lo usas)
+              pago.mp     = metodo;     // algunos resúmenes usan 'mp'
+              pago.mp1    = metodo;     // otros usan 'mp1'
+
+              pago.monto  = +fmt2(totalSel); // por si tu resumen usa 'monto'
+              pago.mpe1   = +fmt2(totalSel); // otros usan 'mpe1'
+              pago.monto1 = +fmt2(totalSel); // otros usan 'monto1'
+              pago.mpe2   = 0;               // limpia secundarios
+
+              renderPagoResumen();  // ahora no debe salir null
+              cerrarHost();
+            });
+          });
+        });
+
+
+
+
+        (() => {
+          const $ = (id) => document.getElementById(id);
+
+          const METODOS = ["EFECTIVO","YAPE","PLIN","BCP","INTERBANK","BBVA","SCOTIABANK","BANCO DE LA NACION"];
+          const LOGOS = {
+            "EFECTIVO":            "/activos/metodopago/Efectivo.svg",
+            "YAPE":                "/activos/metodopago/Yape.svg",
+            "PLIN":                "/activos/metodopago/Plin.svg",
+            "BCP":                 "/activos/metodopago/BCP.svg",
+            "INTERBANK":           "/activos/metodopago/Interbank.svg",
+            "BBVA":                "/activos/metodopago/BBVA.svg",
+            "SCOTIABANK":          "/activos/metodopago/Scotiabank.svg",
+            "BANCO DE LA NACION":  "/activos/metodopago/BancoNacion.svg"
+          };
+
+          const opts = METODOS.map(m => `<option value="${m}">${m}</option>`).join("");
+          const to2  = (v) => (Math.round((+v + Number.EPSILON) * 100) / 100).toFixed(2);
+          const norm = (s) => {
+            s = (s||"").toString().replace(/,/g,".").replace(/[^\d.]/g,"");
+            const p = s.split("."); if (p.length > 2) s = p[0] + "." + p.slice(1).join("");
+            const [ent, dec=""] = s.split("."); const entN = ent.replace(/^0+(\d)/,"$1");
+            return (entN || (s.includes(".") ? "0" : "")) + (s.includes(".") ? "." + dec.slice(0,2) : "");
+          };
+          const setIcon = (sel, img) => {
+            const k=(sel.value||"").toUpperCase();
+            img.src = LOGOS[k] || "";
+            img.alt = k || "—";
+          };
+
+          document.getElementById('btnPagoMixto').addEventListener('click', () => {
+            const total = Number(document.getElementById('totTotal').textContent || 0);
+
+            abrirHost(`
+              <h5 class="mb-3">PAGO MIXTO</h5>
+              <div class="alert alert-secondary fw-semibold">TOTAL A PAGAR: <strong>S/ ${to2(total)}</strong></div>
+
+              <!-- Fila 1 -->
+              <label class="form-label mb-1">MÉTODO DE PAGO 1</label>
+              <div class="pay-row">
+                <img id="mix_icon1" class="pay-ico" alt="mp1" width="36" height="36">
+                <select id="mix_mp1" class="form-select pay-select">
+                  <option value="">-- Seleccione --</option>${opts}
+                </select>
+                <input id="mix_m1" type="text" class="form-control pay-amount" placeholder="Monto MP1"
+                       inputmode="decimal" autocomplete="off" data-total="${to2(total)}">
+              </div>
+              <div class="invalid-feedback d-block small" id="mix_err1"></div>
+              <div class="form-text" id="mix_warn1" style="display:none;">Excede el total. Corrígelo antes de aceptar.</div>
+
+              <!-- Fila 2 -->
+              <label class="form-label mt-2 mb-1">MÉTODO DE PAGO 2</label>
+              <div class="pay-row">
+                <img id="mix_icon2" class="pay-ico" alt="mp2" width="36" height="36">
+                <select id="mix_mp2" class="form-select pay-select">
+                  <option value="">-- Seleccione --</option>${opts}
+                </select>
+                <input id="mix_m2" type="text" class="form-control pay-amount" placeholder="Monto MP2" readonly>
+              </div>
+              <div class="invalid-feedback d-block small" id="mix_err2"></div>
+
+              <div class="text-end mt-3">
+                <button class="btn btn-secondary me-2" data-modal-close>Volver</button>
+                <button id="mix_ok" class="btn btn-primary">Aceptar</button>
+              </div>
+            `);
+
+            // Nodos
+            const mp1=$('mix_mp1'), mp2=$('mix_mp2'), ic1=$('mix_icon1'), ic2=$('mix_icon2');
+            const m1=$('mix_m1'), m2=$('mix_m2'), err1=$('mix_err1'), err2=$('mix_err2'), warn1=$('mix_warn1');
+
+            // Inicial
+            mp1.value='EFECTIVO'; mp2.value='YAPE';
+            setIcon(mp1,ic1); setIcon(mp2,ic2);
+            m1.value=''; m2.value=to2(total);
+
+            // Helpers
+            const clearErr=()=>{ err1.textContent=''; err2.textContent=''; m1.classList.remove('is-invalid'); m2.classList.remove('is-invalid'); };
+
+            function recalc(){
+              clearErr();
+              const before=m1.value, clean=norm(before); if(before!==clean) m1.value=clean;
+              if(clean===''){ m2.value=to2(total); warn1.style.display='none'; return; }
+              const v1=parseFloat(clean||'0'); const v2=Math.max(0,total-(isNaN(v1)?0:v1));
+              m2.value=to2(v2);
+              warn1.style.display=(v1>total)?'':'none';
+              if(v1<0){ m1.classList.add('is-invalid'); err1.textContent='No se permiten negativos.'; }
+            }
+
+            // Eventos
+            mp1.addEventListener('change',()=>{ if(mp1.value===mp2.value) mp2.value=''; setIcon(mp1,ic1); });
+            mp2.addEventListener('change',()=>{ if(mp1.value===mp2.value) mp1.value=''; setIcon(mp2,ic2); });
+            m1.addEventListener('input',recalc); m1.addEventListener('paste',()=>requestAnimationFrame(recalc));
+
+            $('mix_ok').addEventListener('click',()=>{
+              clearErr();
+              const T=Number(m1.dataset.total||0), v1=parseFloat(norm(m1.value||'')), v2=parseFloat(norm(m2.value||''));
+              if(!mp1.value||!mp2.value){ alert('Selecciona ambos métodos.'); return; }
+              if(mp1.value===mp2.value){ alert('Los métodos deben ser distintos.'); return; }
+
+              let bad=false;
+              if(isNaN(v1)||v1<=0){ m1.classList.add('is-invalid'); err1.textContent='Monto > 0.'; bad=true; }
+              if(isNaN(v2)||v2<=0){ m2.classList.add('is-invalid'); err2.textContent='Monto > 0.'; bad=true; }
+              if(v1>T){ m1.classList.add('is-invalid'); err1.textContent='No puede exceder el total.'; bad=true; }
+              if(v1===T){ m1.classList.add('is-invalid'); err1.textContent='Igual al total = pago único.'; bad=true; }
+              const sumOk = Math.abs((v1+v2)-T) < 0.01;
+              if(!sumOk){ m2.value=to2(Math.max(0,T-(isNaN(v1)?0:v1))); m2.classList.add('is-invalid'); err2.textContent='M1 + M2 debe igualar el total.'; bad=true; }
+              if(bad){ (m1.classList.contains('is-invalid')?m1:m2).focus(); return; }
+
+              // Guardar selección
+              pago.tipo='MIXTO';
+              pago.mp1=mp1.value.toUpperCase();  pago.monto1=+to2(v1);
+              pago.mp2=mp2.value.toUpperCase();  pago.monto2=+to2(v2);
+              renderPagoResumen(); cerrarHost();
+            });
+
+            recalc();
+          });
+        })();
+
+
+
+        /* ================== Registrar ================== */
+        function getItemsState(){
+          const rows = [...grid.querySelectorAll('tr')];
+          let invalid=false,total=0;
+          rows.forEach(tr=>{
+            const q=Number(tr.querySelector('.det-cant').value||0);
+            const p=Number(tr.querySelector('.det-pre' ).value||0);
+            if(q<=0 || p<=0) invalid=true;
+            total+=q*p;
+          });
+          return { hasItems: rows.length>0, invalid, total };
+        }
+        function hasCliente(){ return !!(document.getElementById('txtIdCliente').value||'').trim(); }
+
+        document.getElementById('btnRegistrar').addEventListener('click', async ()=>{
+          if(!hasCliente()) return alert('Selecciona un cliente.');
+          const st = getItemsState();
+          if(!st.hasItems) return alert('Agrega al menos un producto.');
+          if(st.invalid)   return alert('Hay cantidad o precio en 0. Corrige el detalle.');
+          if(st.total<=0)  return alert('El total debe ser mayor a 0.');
+
+          const mp1  = (document.getElementById('hidMP1').value || '').toUpperCase();
+          const mp2  = (document.getElementById('hidMP2').value || '').toUpperCase();
+          const m1   = Number(document.getElementById('hidMontoMP1').value || 0);
+          const m2   = Number(document.getElementById('hidMontoMP2').value || 0);
+
+          if(!mp1) return alert('Selecciona un método de pago.');
+          if(mp2 && mp2!=='-'){
+            if(mp1===mp2) return alert('En mixto, los métodos deben ser distintos.');
+            if(Math.abs((m1+m2)-st.total)>0.01) return alert('En mixto, MP1+MP2 debe igualar al total.');
+          }else{
+            if(Math.abs(m1-st.total)>0.01) return alert('El monto del pago debe ser igual al total.');
+          }
+
+          abrirHost(`
+            <h5 class="mb-3">¿Registrar la venta?</h5>
+            <p>Total a cobrar: <strong>S/ ${fmt2(st.total)}</strong></p>
+            <div class="text-end">
+              <button class="btn btn-secondary me-2" data-modal-close>No</button>
+              <button id="nv_confirma" class="btn btn-primary">Sí, registrar</button>
+            </div>
+          `);
+
+          document.getElementById('nv_confirma').addEventListener('click', async ()=>{
+            const rows = [...grid.querySelectorAll('tr')];
+            const items = rows.map(tr=>({
+              idProducto: tr.dataset.id,
+              idTalla:    tr.dataset.talla || null,
+              idUnidad:   tr.dataset.und || 'UND',
+              cantidad:   Number(tr.querySelector('.det-cant').value||0),
+              precioUnit: Number(tr.querySelector('.det-pre').value||0)
+            }));
+
+            const uiTipo = document.getElementById('txtTipoDocumento').value;
+            const {tipo,serie} = mapTipoYSerie(uiTipo);
+
+            const dto = {
+              tipoDocumento: tipo, serie,
+              idCaja: document.getElementById('hidIdCaja').value,
+              idTienda: document.getElementById('hidIdTienda').value,
+              idUsuario: document.getElementById('hidIdUsuario').value,
+              idCliente: document.getElementById('txtIdCliente').value,
+              total: st.total,
+              mp1: (mp1||'-'), montoMP1:(m1||0),
+              mp2: (mp2 && mp2!=='-')?mp2:'-', montoMP2:(mp2 && mp2!=='-')?m2:0,
+              items
+            };
+
+            const res = await fetchWithLoader('/Ventas/Crear', {
+              method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(dto)
+            }, 'Registrando venta…');
+
+            if(!res.ok){ const msg = await res.text().catch(()=> 'Error al registrar'); alert(msg||'Error al registrar'); return; }
+            const data = await res.json().catch(()=> ({}));
+            cerrarHost();
+
+            const idVenta = data?.idVenta || 0;
+            if(idVenta>0){
+              const url = `/Ventas/Imprimir/${idVenta}`;
+              const h = await fetch(url, { headers:{'X-Requested-With':'XMLHttpRequest'} });
+              const html = h.ok ? await h.text() : '<div class="p-3 text-danger">No se pudo cargar el formato.</div>';
+              abrirHost(html);
+            }
+
+            grid.innerHTML=''; document.getElementById('txtIdCliente').value='SYJ0007';
+            document.getElementById('txtClienteNombre').value='CLIENTE SYJ STYLE (77777777)';
+            resetPago(); recalcular(); toast('Venta registrada');
+          });
+        });
+
+        /* ================== Totales ================== */
+        function recalcular() {
+          const rows = Array.from(grid.querySelectorAll('tr'));
+          let total = 0, unidades = 0;
+          for (const tr of rows) {
+            const q = Number(tr.querySelector('.det-cant')?.value || 0);
+            const p = Number(tr.querySelector('.det-pre') ?.value || 0);
+            const imp = q * p;
+            setImporteCell(tr, imp);
+            total += imp; unidades += q;
+          }
+          const igv = total - (total / 1.18);
+          const sub = total - igv;
+
+          document.getElementById('totItems').textContent = String(unidades);
+          document.getElementById('totSub').textContent   = fmt2(sub);
+          document.getElementById('totIGV').textContent   = fmt2(igv);
+          document.getElementById('totTotal').textContent = fmt2(total);
+
+          const state = getItemsState();
+          const readyForPay = hasCliente() && state.hasItems && !state.invalid && total > 0;
+          if (!readyForPay && pago.tipo) resetPago();
+          setPagoButtonsEnabled(readyForPay);
+
+          if (pago.tipo === 'EFECTIVO' || pago.tipo === 'DEPOSITO') {
+            pago.monto1 = total; pago.mp2='-'; pago.monto2=0;
+          } else if (pago.tipo === 'MIXTO') {
+            const m1 = Number(pago.monto1||0);
+            pago.monto1 = Math.max(0, Math.min(m1, total));
+            pago.monto2 = Math.max(0, total - pago.monto1);
+          }
+          renderPagoResumen();
+        }
+
+
+        /* ===== Init ===== */
+        setPagoButtonsEnabled(false);
+        document.querySelectorAll('#gridDetalle tr').forEach(bindRow);
+        recalcular();
+
+                (function(){
+          // 1) cache global (memoria)
+          window.__cacheNV = { version: null, productos: [], clientes: [] };
+
+          // 2) intenta restaurar de localStorage (opcional)
+          try {
+            const raw = localStorage.getItem('nv_bootstrap');
+            if (raw) {
+              const {version, productos, clientes} = JSON.parse(raw);
+              window.__cacheNV = { version, productos, clientes };
+            }
+          } catch {}
+
+          // 3) siempre pide al servidor (barato si ya está fresco)
+          //    /api/ventas/bootstrap debe devolver: { version, productos:[...], clientes:[...] }
+          fetch('/api/ventas/bootstrap', { headers:{'X-Requested-With':'XMLHttpRequest'} })
+            .then(r => r.json())
+            .then(data => {
+              if (!data || !data.version) return;
+              // solo si cambia la versión, actualiza cache y localStorage
+              if (data.version !== window.__cacheNV.version) {
+                window.__cacheNV = {
+                  version: data.version,
+                  productos: data.productos || [],
+                  clientes: data.clientes || []
+                };
+                try { localStorage.setItem('nv_bootstrap', JSON.stringify(window.__cacheNV)); } catch {}
+              }
+              document.dispatchEvent(new CustomEvent('nv:bootstrap-ready'));
+            })
+            .catch(()=>{ /* si falla, usamos el localStorage/memoria si existe */ });
+
+          // helper de búsqueda local (insensible a mayúsculas y con índice)
+          window.__nvFilterBy = function(list, q, proj){
+            if (!q) return list;
+            q = q.trim().toLowerCase();
+            return list.filter(x => proj(x).includes(q));
+          };
+
+          // índices (para filtro muy rápido)
+          document.addEventListener('nv:bootstrap-ready', () => {
+            const C = window.__cacheNV;
+            C.productos.forEach(p => { p._k = (p.nombre + ' ' + p.idProducto + ' ' + (p.idTalla||'') + ' ' + (p.idUnidad||'')).toLowerCase(); });
+            C.clientes.forEach(c => { c._k = (c.nombre + ' ' + (c.ruc||'') + ' ' + c.id).toLowerCase(); });
+          });
+        })();
+
+    </script>
+
+}

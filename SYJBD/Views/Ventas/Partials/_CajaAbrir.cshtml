@@ -1,0 +1,82 @@
+﻿@model SYJBD.Models.CajaAbrirVM
+@using System.Security.Claims
+@{
+    Layout = null;
+
+    // id del usuario autenticado (si no hay, string vacío)
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+}
+@{
+    Layout = null;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/nuevaventa.css" asp-append-version="true" />
+}
+
+<div class="mh vd vd--md">
+    <!-- header pequeñito dentro del body (más compacto en móvil) -->
+    <div class="mh-scroll">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">APERTURA DE CAJA</h5>
+        </div>
+
+        <form method="post" action="@Url.Action("CajaAbrir","Ventas")" id="frmCajaAbrir">
+            <div class="row g-2">
+                <div class="col-6 col-md-4">
+                    <label class="form-label">USUARIO</label>
+                    <input name="IdUsuario" value="@userId" class="form-control" readonly />
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label">CAJA ASIGNADA</label>
+                    <input value="@Model.NextIdCaja" class="form-control" readonly />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">FECHA/HORA APERTURA</label>
+                    <input value="@DateTime.Now.ToString("yyyy-MM-dd HH:mm")" class="form-control" readonly />
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">TIENDA SYJ</label>
+                    <select name="IdTienda" class="form-select" required
+                            oninvalid="this.setCustomValidity('Selecciona una tienda')"
+                            oninput="this.setCustomValidity('')">
+                        <option value="">-- Selecciona tienda --</option>
+                        @foreach (var t in Model.Tiendas)
+                        {
+                            <option value="@t.IdTienda">@t.IdTienda - @t.Nombre</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label">EFECTIVO APERTURA (S/)</label>
+                    <input name="MontoApertura" inputmode="decimal" autocomplete="off"
+                           class="form-control" data-decimal="2" required placeholder="0.00"
+                           oninvalid="this.setCustomValidity('Ingresa un monto válido (máx. 2 decimales)')"
+                           oninput="this.setCustomValidity('')" />
+                    <div class="form-text">Solo números y hasta 2 decimales.</div>
+                </div>
+            </div>
+
+            <!-- Footer fijo -->
+            <div class="mh-footer d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary" data-modal-close>Cancelar</button>
+                <button type="submit" class="btn btn-primary">Aperturar caja</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    (() => {
+      const f = document.getElementById('frmCajaAbrir');
+      if (!f) return;
+      f.addEventListener('submit', (e) => {
+        const monto = (f.MontoApertura.value||'').replace(',','.');
+        if (!/^\d+(\.\d{1,2})?$/.test(monto) || Number(monto) <= 0) {
+          e.preventDefault();
+          alert('Monto de apertura inválido (use máximo 2 decimales y > 0).');
+        }
+      });
+    })();
+</script>

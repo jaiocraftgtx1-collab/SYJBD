@@ -8,19 +8,55 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] - SVJ STYLE</title>
+    <title>@ViewData["Title"] - S&J STYLE</title>
+
+    <!-- ÚNICA fuente: Manrope -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />  <!-- estilos del loader -->
+
 </head>
+
 <body class="login-body">
+
+    <!-- Loader global (overlay) -->
+    <div id="app-loader" class="app-loader app-loader_hidden" aria-hidden="true">
+        <div class="app-loader__backdrop"></div>
+        <div class="app-loader__box" role="alert" aria-live="assertive">
+            <div class="app-loader__spinner" aria-hidden="true"></div>
+            <div class="app-loader__text">
+                <strong id="app-loader-text">Procesando…</strong>
+                <span class="app-loader__dots" aria-hidden="true"></span>
+            </div>
+        </div>
+    </div>
+
+
     <main class="login-shell">
         <section class="login-card">
-            <div class="login-left">
-                <h1 class="lg-title">Iniciar sesión</h1>
 
+            <!-- Panel superior con gradiente y LOGO como <img> -->
+            <aside class="login-right">
+                <div class="brand">
+                    <img class="brand-img"
+                         src="https://res.cloudinary.com/dsgubneod/image/upload/v1759382072/logo_empresa_sinfondo_Mesa_de_trabajo_1_pfpbfo.png"
+                         alt="SVJ Style"
+                         decoding="async"
+                         loading="eager" />
+                </div>
+            </aside>
+
+            <!-- Contenedor del formulario -->
+            <div class="login-left">
                 <form asp-action="Login" asp-controller="Auth" method="post" class="lg-form">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="ReturnUrl" />
+
+                    <div class="lg-heading">INICIAR SESIÓN</div>
 
                     <div class="lg-field">
                         <i class="bi bi-person"></i>
@@ -42,13 +78,23 @@
                     <button class="lg-btn" type="submit">Entrar</button>
                 </form>
             </div>
-
-            <aside class="login-right">
-                <div class="blob"></div>
-                <div class="circle"></div>
-                <div class="brand">SVJ STYLE</div>
-            </aside>
         </section>
     </main>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        // Muestra el loader cuando el usuario envía el formulario de login
+        document.addEventListener('DOMContentLoaded', () => {
+          const form = document.querySelector('form[asp-action="Login"]') || document.querySelector('form');
+          if (!form) return;
+          form.addEventListener('submit', () => {
+            if (window.showLoader) showLoader('Iniciando sesión');
+            // No cancelamos el submit; dejamos que navegue al servidor
+          });
+        });
+    </script>
+
+
 </body>
 </html>

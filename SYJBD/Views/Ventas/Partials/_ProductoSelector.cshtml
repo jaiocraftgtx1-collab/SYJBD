@@ -1,0 +1,254 @@
+﻿<div class="modal-header">
+    <h5 class="modal-title">Seleccionar productos</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+<div class="modal-body">
+    <div class="row g-2 align-items-end mb-2">
+        <div class="col-sm-4">
+            <label class="form-label">Buscar</label>
+            <input id="prd-q" class="form-control" placeholder="Código o nombre...">
+        </div>
+        <div class="col-sm-2">
+            <button id="prd-find" class="btn btn-primary w-100">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive" style="max-height:55vh; overflow:auto;">
+        <table class="table table-hover align-middle" id="prd-tbl">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width:36px"><input id="chkAll" type="checkbox"></th>
+                    <th style="width:90px">Cod.</th>
+                    <th>Producto</th>
+                    <th style="width:90px">Talla</th>
+                    <th style="width:90px">Und</th>
+                    <th style="width:110px" class="text-end">Cant.</th>
+                    <th style="width:120px" class="text-end">P.Unit</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+<div class="modal-footer">
+    <div class="me-auto small text-muted">
+        <span id="selCount">0</span> seleccionados
+    </div>
+    <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+    <button id="btnAddSelected" class="btn btn-primary" disabled>Agregar</button>
+</div>
+<style>
+    /* Fondo sutil + “stripe” lateral para separar bloques */
+    .sp-row {
+        position: relative;
+        border-radius: 10px;
+    }
+
+        .sp-row.grp-a {
+            background: #f8fafc;
+        }
+        /* slate-50 */
+        .sp-row.grp-b {
+            background: #f3f4f6;
+        }
+            /* gray-100 */
+
+            .sp-row.grp-a::before,
+            .sp-row.grp-b::before {
+                content: "";
+                position: absolute;
+                left: 6px;
+                top: 6px;
+                bottom: 6px;
+                width: 4px;
+                border-radius: 4px;
+                background: var(--stripe, #cbd5e1);
+            }
+
+        .sp-row.grp-a {
+            --stripe: #60a5fa;
+        }
+        /* azul */
+        .sp-row.grp-b {
+            --stripe: #34d399;
+        }
+        /* verde */
+
+        /* Si usas tabla, dale un poco de aire a las celdas para que el fondo se note */
+        .sp-row > td {
+            padding: 10px 12px;
+
+
+        }
+
+    /* Bloques por producto dentro de la tabla del selector */
+    #prd-tbl tbody tr.sp-row {
+        position: relative;
+        border-radius: 10px; /* suaviza las esquinas del “bloque” */
+    }
+
+        #prd-tbl tbody tr.sp-row.grp-a {
+            background: #f8fafc;
+        }
+        /* slate-50 */
+        #prd-tbl tbody tr.sp-row.grp-b {
+            background: #f3f4f6;
+        }
+            /* gray-100 */
+
+            /* “stripe” lateral para reforzar cada bloque */
+            #prd-tbl tbody tr.sp-row.grp-a::before,
+            #prd-tbl tbody tr.sp-row.grp-b::before {
+                content: "";
+                position: absolute;
+                left: 6px;
+                top: 6px;
+                bottom: 6px;
+                width: 4px;
+                border-radius: 4px;
+                background: var(--stripe, #cbd5e1);
+            }
+
+        #prd-tbl tbody tr.sp-row.grp-a {
+            --stripe: #60a5fa;
+        }
+        /* azul */
+        #prd-tbl tbody tr.sp-row.grp-b {
+            --stripe: #34d399;
+        }
+        /* verde */
+
+        /* Un poco de aire para que se note el fondo */
+        #prd-tbl tbody tr.sp-row > td {
+            padding: 10px 12px;
+        }
+
+        /* Separación visual al inicio de cada bloque */
+        #prd-tbl tbody tr.sp-row.is-first > td {
+            border-top: 8px solid transparent; /* “respiro” arriba del bloque */
+        }
+</style>
+
+
+<script>
+    (() => {
+      const $tb = $("#prd-tbl tbody");
+      const $btn = $("#btnAddSelected");
+      const $count = $("#selCount");
+
+      // usa el set de existentes (id|talla) si lo armaste antes de abrir el modal
+      const existentes = new Set(Array.isArray(window.__detalleKeys) ? window.__detalleKeys : []);
+      const keyOf = r => `${r.idProducto}|${r.idTalla||''}`;
+
+    function rowTemplate(r){
+      const dup = existentes.has(keyOf(r));
+      return $(`
+        <tr class="sp-row ${dup?'is-dup':''}" data-pid="${r.idProducto}" data-key="${keyOf(r)}">
+          <td><input class="chk" type="checkbox" ${dup?'disabled':''}></td>
+          <td>${r.idProducto}</td>
+          <td>${r.nombre}</td>
+          <td>${r.idTalla||''}</td>
+          <td>${r.idUnidad||''}</td>
+          <td class="text-end"><input class="form-control form-control-sm qty" value="1"></td>
+          <td class="text-end"><input class="form-control form-control-sm price" value="${Number(r.precioUnit||0).toFixed(2)}"></td>
+        </tr>`);
+    }
+
+    function stripeByProduct(){
+      const $rows = $("#prd-tbl tbody tr.sp-row");
+      let last = null, flip = false;
+      $rows.removeClass('grp-a grp-b is-first');
+      $rows.each(function(){
+        const pid = this.dataset.pid || '';
+        if (pid !== last) { flip = !flip; last = pid; $(this).addClass('is-first'); }
+        $(this).toggleClass('grp-a',  flip)
+               .toggleClass('grp-b', !flip);
+      });
+    }
+
+    function render(list){
+      $tb.empty();
+      list.forEach(r => $tb.append(rowTemplate(r)));
+      stripeByProduct();   // <—— APLICAR BLOQUES
+      updateBtn();
+    }
+      function updateBtn(){
+        const n = $("#prd-tbl .chk:checked").length;
+        $btn.prop("disabled", n===0).text(n?`Agregar (${n})`:'Agregar');
+        $("#selCount").text(n);
+      }
+
+      // FILTRO LOCAL con debounce
+     let t=null;
+    async function buscarLocal(){
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const raw   = ($("#prd-q").val()||'').trim().toLowerCase();
+        const talla = ($("#prd-talla")?.val?.()||'').trim().toLowerCase();
+        const und   = ($("#prd-und")  ?.val?.()||'').trim().toLowerCase();
+
+        const base = (window.__cacheNV?.productos||[]).filter(p => p.activo !== false);
+
+        let res;
+        if (!raw) {
+          res = base;
+        } else if (/^\d+$/.test(raw)) {
+          // solo dígitos -> busca por código que "empieza por"
+          res = base.filter(p => String(p.idProducto||'').startsWith(raw));
+        } else {
+          // tokeniza por espacios y exige que TODAS las palabras estén en _k
+          const toks = raw.split(/\s+/).filter(Boolean);
+          res = base.filter(p => {
+            const k = p._k || '';         // ya lo construyes al hacer bootstrap
+            return toks.every(t => k.includes(t));
+          });
+        }
+
+        if (talla) res = res.filter(p => String(p.idTalla||'').toLowerCase().includes(talla));
+        if (und)   res = res.filter(p => String(p.idUnidad||'').toLowerCase().includes(und));
+
+        render(res.slice(0, 500));     // stripeByProduct() ya corre dentro de render()
+      }, 180);
+    }
+
+
+      $("#prd-find").on("click", buscarLocal);
+      $("#prd-q, #prd-talla, #prd-und").on("input", buscarLocal);
+      $("#chkAll").on("change", function(){
+        $("#prd-tbl .chk:not(:disabled)").prop("checked", this.checked); updateBtn();
+      });
+      $tb.on("change", ".chk", updateBtn);
+
+      $btn.on("click", () => {
+        const cache = window.__cacheNV?.productos || [];
+        const rows = [];
+        $("#prd-tbl tbody tr").each(function(){
+          const $tr = $(this);
+          if(!$tr.find(".chk").is(":checked")) return;
+          const idProducto = +$tr.find("td:eq(1)").text();
+          const base = cache.find(x => x.idProducto === idProducto);
+          const idTalla = ($tr.find("td:eq(3)").text().trim() || base?.idTalla || '');
+          const k = `${idProducto}|${idTalla}`;
+          if (existentes.has(k)) return;
+          existentes.add(k);
+          rows.push({
+            idProducto: idProducto,
+            nombre: base?.nombre || $tr.find("td:eq(2)").text().trim(),
+            idTalla: idTalla,
+            idUnidad: $tr.find("td:eq(4)").text().trim() || base?.idUnidad || '',
+            cantidad: Math.max(1, parseInt($tr.find(".qty").val()||"1")),
+            precioUnit: Math.max(0, parseFloat($tr.find(".price").val()||base?.precioUnit||0))
+          });
+        });
+        if(rows.length){ document.dispatchEvent(new CustomEvent("productos:agregar",{detail:rows})); }
+      });
+
+      // espera a que el bootstrap esté listo si aún no llegó
+      if (window.__cacheNV?.productos?.length) buscarLocal();
+      else document.addEventListener('nv:bootstrap-ready', buscarLocal, { once:true });
+    })();
+</script>
+
+

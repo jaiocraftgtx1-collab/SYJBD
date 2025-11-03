@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace SYJBD.Views.Shared.Components.Pager
+namespace SYJBD.Views.Ventas.Partials
 {
-    public class DefaultModel : PageModel
+    public class _CajaCerrarModel : PageModel
     {
         public void OnGet()
         {

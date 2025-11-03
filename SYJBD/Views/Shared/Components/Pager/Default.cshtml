@@ -1,4 +1,111 @@
-﻿@page
-@model SYJBD.Views.Shared.Components.Pager.DefaultModel
+﻿@using System
+@using Microsoft.AspNetCore.Routing
+@model dynamic
+
+@functions {
+    int AsInt(object v, int def = 0)
+    {
+        try { return v is null ? def : Convert.ToInt32(v); }
+        catch { return def; }
+    }
+
+    int CountItems(dynamic m)
+    {
+        try
+        {
+            if (m?.Items is System.Collections.ICollection c) return c.Count;
+            if (m?.Items is System.Collections.Generic.IEnumerable<object> e) return e is null ? 0 : e.Count();
+            return 0;
+        }
+        catch { return 0; }
+    }
+
+    int GetTotal(dynamic m)
+    {
+        try
+        {
+            if (m?.TotalItems != null) return Convert.ToInt32(m.TotalItems);
+            if (m?.TotalCount != null) return Convert.ToInt32(m.TotalCount);
+            if (m?.Total != null) return Convert.ToInt32(m.Total);
+            if (m?.TotalRegistros != null) return Convert.ToInt32(m.TotalRegistros);
+        }
+        catch { }
+        return 0;
+    }
+}
+
 @{
+    var currentPage = AsInt(Model?.Page, 1);
+    var pageSize = AsInt(Model?.PageSize, 10);
+    var total = GetTotal(Model);
+    var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)Math.Max(1, pageSize)));
+    var shown = CountItems(Model);
+
+    string controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    var baseRouteValues = new RouteValueDictionary(ViewContext.RouteData.Values);
+    foreach (var kv in ViewContext.HttpContext.Request.Query)
+        baseRouteValues[kv.Key] = kv.Value.ToString();
+
+    string LinkTo(int p)
+    {
+        var rv = new RouteValueDictionary(baseRouteValues);
+        rv["page"] = p;
+        rv["pageSize"] = pageSize;
+        return Url.Action(action, controller, rv) ?? "#";
+    }
+}
+
+@if (totalPages > 1)
+{
+    <div class="pager">
+        <nav aria-label="Paginación">
+            <ul class="pagination justify-content-center m-0">
+                <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                    <a class="page-link" href="@(currentPage <= 1 ? "#" : LinkTo(currentPage - 1))">Anterior</a>
+                </li>
+
+                @{
+                    int start = Math.Max(1, currentPage - 1);
+                    int end = Math.Min(totalPages, currentPage + 1);
+
+                    if (start > 1)
+                    {
+                        <li class="page-item"><a class="page-link" href="@LinkTo(1)">1</a></li>
+                        if (start > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                            ;
+                        }
+                    }
+
+                    for (int p = start; p <= end; p++)
+                    {
+                        <li class="page-item @(p == currentPage ? "active" : "")">
+                            <a class="page-link" href="@(p == currentPage ? "#" : LinkTo(p))">@p</a>
+                        </li>
+                    }
+
+                    if (end < totalPages)
+                    {
+                        if (end < totalPages - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link">…</span></li>
+                            ;
+                        }
+                        <li class="page-item"><a class="page-link" href="@LinkTo(totalPages)">@totalPages</a></li>
+                    }
+                }
+
+                <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                    <a class="page-link" href="@(currentPage >= totalPages ? "#" : LinkTo(currentPage + 1))">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="text-center small mt-1">
+            Mostrando @shown de @total ítems — Página @currentPage de @totalPages
+        </div>
+    </div>
 }

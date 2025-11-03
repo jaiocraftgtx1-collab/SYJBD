@@ -1,0 +1,170 @@
+﻿@model SYJBD.Models.CajaReporteVM
+@{
+    var totalVentas = (Model?.MetodosPago ?? Enumerable.Empty<dynamic>()).Sum(x => (decimal)x.Total);
+    var totalGastos = (Model?.Egresos ?? Enumerable.Empty<dynamic>()).Sum(x => (decimal)x.Monto);
+}
+
+<div class="crx-wrapper">
+    <header class="crx-header crx-header--compact">
+        <h3 class="crx-h">Detalle de caja #@Model!.Cabecera.IdCaja</h3>
+        <button type="button" class="btn btn-danger btn-sm" data-modal-close>Cerrar</button>
+    </header>
+
+    <div class="crx-grid crx-grid--header">
+        <section class="crx-stack">
+            <div class="crx-card">
+                <h5 class="crx-title">Datos de apertura</h5>
+                <div class="crx-form crx-form--2">
+                    <label><span>EFECTIVO INICIAL</span><input class="crx-inp" value="@Model.Cabecera.MontoApertura?.ToString("0.00")" readonly /></label>
+                    <label><span>FECHA/HORA DE APERTURA</span><input class="crx-inp" value="@($"{Model.Cabecera.FechaApertura:dd/MM/yyyy HH:mm}")" readonly /></label>
+                    <label class="crx-col-2"><span>USUARIO DE APERTURA</span><input class="crx-inp" value="@Model.Cabecera.IdUsuarioApertura" readonly /></label>
+                </div>
+            </div>
+
+            <div class="crx-card">
+                <h5 class="crx-title">Datos de cierre</h5>
+                <div class="crx-form crx-form--2">
+                    <label><span>EFECTIVO CIERRE</span><input class="crx-inp" value="@Model.Cabecera.MontoCierre?.ToString("0.00")" readonly /></label>
+                    <label><span>FECHA/HORA DE CIERRE</span><input class="crx-inp" value="@($"{Model.Cabecera.FechaCierre:dd/MM/yyyy HH:mm}")" readonly /></label>
+                    <label class="crx-col-2"><span>USUARIO DE CIERRE</span><input class="crx-inp" value="@Model.Cabecera.IdUsuarioCierre" readonly /></label>
+                </div>
+            </div>
+        </section>
+
+        <section class="crx-card">
+            <h5 class="crx-title">Datos de caja</h5>
+            <div class="crx-form crx-form--2">
+                <label><span>CAJA</span><input class="crx-inp" value="@Model.Cabecera.IdCaja" readonly /></label>
+                <label><span>TIENDA</span><input class="crx-inp" value="@Model.Cabecera.IdTienda" readonly /></label>
+                <label class="crx-col-2"><span>TIENDA</span><input class="crx-inp" value="@Model.Cabecera.TiendaNombre" readonly /></label>
+                <label class="crx-col-2"><span>OBSERVACIÓN</span><input class="crx-inp" value="@Model.Cabecera.Observacion" readonly /></label>
+            </div>
+        </section>
+    </div>
+
+    <!-- VENTAS POR MÉTODO (adaptable) -->
+    <section class="crx-card crx-card--tone-green">
+        <div class="crx-head">
+            <h5 class="crx-title">Ventas por método de pago</h5>
+            <div class="crx-total">
+                <span>TOTAL VENTAS:</span>
+                <output class="crx-pill">@totalVentas.ToString("0.00")</output>
+            </div>
+        </div>
+
+        <div class="crx-table">
+            <table>
+                <thead class="nv-th">
+                    <tr>
+                        <th>MÉTODO DE PAGO</th>
+                        <th class="ta-right" style="width:160px">MONTO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.MetodosPago)
+                    {
+                        <tr>
+                            <td>@m.Metodo</td>
+                            <td class="ta-right">@m.Total.ToString("0.00")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="crx-stats">
+            <div class="crx-chip crx-chip--ok">ATENDIDAS: <b>@Model.Contadores.VentasAtendidas</b></div>
+            <div class="crx-chip crx-chip--danger">ANULADAS: <b>@Model.Contadores.VentasAnuladas</b></div>
+        </div>
+    </section>
+
+    <!-- GASTOS (scroll horizontal, anchos fijos) -->
+    <section class="crx-card crx-card--tone-red">
+        <div class="crx-head">
+            <h5 class="crx-title">Gastos</h5>
+            <div class="crx-total">
+                <span>TOTAL GASTOS:</span>
+                <output class="crx-pill">@totalGastos.ToString("0.00")</output>
+            </div>
+        </div>
+
+        <div class="crx-table crx-table__scroll crx-table__scroll--gastos">
+            <table>
+                <colgroup>
+                    <col style="width:110px" />  <!-- CÓD. -->
+                    <col style="width:420px" />  <!-- DETALLE (elástico con ellipsis) -->
+                    <col style="width:140px" />  <!-- MONTO -->
+                    <col style="width:160px" />  <!-- MÉTODO -->
+                    <col style="width:180px" />  <!-- FECHA -->
+                    <col style="width:140px" />  <!-- ESTADO -->
+                </colgroup>
+                <thead class="nv-th">
+                    <tr>
+                        <th>CÓD.</th>
+                        <th>DETALLE</th>
+                        <th class="ta-right">MONTO</th>
+                        <th>MÉTODO</th>
+                        <th>FECHA</th>
+                        <th>ESTADO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var g in Model.Egresos)
+                    {
+                        <tr>
+                            <td>@g.Codigo</td>
+                            <td class="is-elastic">@g.Detalle</td>
+                            <td class="ta-right">@g.Monto.ToString("0.00")</td>
+                            <td>@g.MetodoPago</td>
+                            <td>@($"{g.Fecha:dd/MM/yyyy HH:mm:ss}")</td>
+                            <td>@g.Estado</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="crx-stats">
+            <div class="crx-chip crx-chip--ok">AUTORIZADAS: <b>@Model.Contadores.EgresosAut</b></div>
+            <div class="crx-chip crx-chip--warn">PENDIENTES: <b>@Model.Contadores.EgresosPen</b></div>
+            <div class="crx-chip crx-chip--danger">ANULADAS: <b>@Model.Contadores.EgresosAnu</b></div>
+        </div>
+    </section>
+
+    <!-- TOP PRODUCTOS (scroll horizontal, anchos fijos) -->
+    <section class="crx-card crx-card--tone-blue">
+        <h5 class="crx-title">Top productos</h5>
+        <div class="crx-table crx-table__scroll crx-table__scroll--top">
+            <table>
+                <colgroup>
+                    <col style="width:110px" />  <!-- CÓD. -->
+                    <col style="width:460px" />  <!-- PRODUCTO (elástico con ellipsis) -->
+                    <col style="width:120px" />  <!-- TALLA -->
+                    <col style="width:90px" />  <!-- CANT. -->
+                    <col style="width:140px" />  <!-- MONTO -->
+                </colgroup>
+                <thead class="nv-th">
+                    <tr>
+                        <th>CÓD.</th>
+                        <th>PRODUCTO</th>
+                        <th>TALLA</th>
+                        <th class="ta-center">CANT.</th>
+                        <th class="ta-right">MONTO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.TopProductos)
+                    {
+                        <tr>
+                            <td>@p.IdProducto</td>
+                            <td class="is-elastic">@p.Nombre</td>
+                            <td>@p.IdTalla</td>
+                            <td class="ta-center">@p.Cantidad</td>
+                            <td class="ta-right">@p.Monto.ToString("0.00")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

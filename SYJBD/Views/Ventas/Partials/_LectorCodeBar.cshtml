@@ -1,0 +1,105 @@
+﻿<div class="p-3">
+    <h5>Prueba de cámara</h5>
+    <div id="camBox" style="position:relative;background:#000;border-radius:8px;overflow:hidden">
+        <video id="camVideo" autoplay playsinline muted
+               style="width:100%;height:60vh;object-fit:cover;display:block"></video>
+        <div id="overlay"
+             style="position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;padding:.5rem;font:12px/1.3 system-ui,Segoe UI,Arial">
+            Estado: inicializando…
+        </div>
+    </div>
+    <div class="mt-2 small" id="moreInfo"></div>
+    <div class="text-end mt-3">
+        <button class="btn btn-secondary" data-modal-close>Cerrar</button>
+    </div>
+</div>
+
+<script>
+    (function(){
+      const log  = (m)=>overlay.textContent = m;
+      const info = (k,v)=>moreInfo.innerHTML += `<div><b>${k}:</b> ${v}</div>`;
+
+      const video   = document.getElementById('camVideo');
+      const overlay = document.getElementById('overlay');
+      const moreInfo= document.getElementById('moreInfo');
+
+      // Espera a que el modal esté realmente visible (evita play() sobre display:none)
+      const waitVisible = ()=>{
+        return new Promise(res=>{
+          const obs = new IntersectionObserver((entries)=>{
+            if (entries[0].isIntersecting) { obs.disconnect(); res(); }
+          }, {root:null,threshold:0.05});
+          obs.observe(video);
+        });
+      };
+
+      let stream=null;
+      async function start(){
+        try{
+          await waitVisible();
+          log('Solicitando cámara…');
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: 'environment' },   // trasera en móvil si existe
+              width:  { ideal: 1280 },
+              height: { ideal: 720 }
+            },
+            audio: false
+          });
+          video.srcObject = stream;
+
+          // eventos útiles
+          video.onloadedmetadata = ()=> info('Video', `${video.videoWidth}×${video.videoHeight}px`);
+          video.onplay = ()=> info('onplay', 'OK (reproduciendo)');
+          video.onpause = ()=> info('onpause', 'pausado');
+
+          await video.play(); // arranca
+          log('Mostrando cámara ✅');
+
+          // dump de track
+          const track = stream.getVideoTracks()[0];
+          const s = track.getSettings?.() || {};
+          const c = track.getCapabilities?.() || {};
+          info('Track label', track.label || '(sin etiqueta)');
+          info('readyState', track.readyState);
+          info('settings', JSON.stringify(s));
+          info('capabilities', JSON.stringify(c));
+
+          // watchdog: verifica si llegan frames (cada 1s)
+          let lastW = 0, lastH = 0;
+          const iv = setInterval(()=>{
+            if (video.videoWidth && video.videoHeight) { lastW = video.videoWidth; lastH = video.videoHeight; }
+            info('tick', `frame=${lastW}×${lastH}, state=${track.readyState}`);
+            if (track.readyState !== 'live') {
+              log('El track no está vivo (otra app tomó la cámara o se cerró).');
+              clearInterval(iv);
+            }
+          }, 1000);
+
+          // Detener al cerrar el modal
+          document.querySelector('[data-modal-close]')?.addEventListener('click', ()=>{
+            try{ stream.getTracks().forEach(t=>t.stop()); }catch{}
+          }, { once:true });
+
+        }catch(e){
+          console.error(e);
+          log('Error: ' + (e && e.name ? `${e.name} – ${e.message||''}` : e));
+          info('Detalle', String(e && e.stack || e));
+          info('SecureContext', String(window.isSecureContext));
+          info('URL', location.href);
+          if (!navigator.mediaDevices?.getUserMedia) {
+            info('Compatibilidad', 'getUserMedia no disponible en este navegador.');
+          }
+        }
+      }
+
+      // Requisito: HTTPS o localhost
+      if (!window.isSecureContext && !/^http:\/\/localhost/.test(location.href)) {
+        log('Esta prueba requiere HTTPS o localhost.');
+      } else if (!navigator.mediaDevices?.getUserMedia) {
+        log('getUserMedia no disponible en este navegador.');
+      } else {
+        start();
+      }
+    })();
+</script>

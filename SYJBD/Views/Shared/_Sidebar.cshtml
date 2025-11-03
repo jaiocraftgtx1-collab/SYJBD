@@ -1,44 +1,41 @@
 ﻿@{
-    // Roles
     bool isAdmin = User.IsInRole("ADMINISTRADOR");
     bool isCom = User.IsInRole("COMERCIAL");
 
-    // Ruta actual
     var ctrl = (ViewContext.RouteData.Values["controller"]?.ToString() ?? "").ToLower();
     var act = (ViewContext.RouteData.Values["action"]?.ToString() ?? "").ToLower();
 
-    // Helpers
     Func<string, string?, string> active = (c, a) =>
         ctrl == c.ToLower() && (a == null || act == a.ToLower()) ? "active" : "";
+
     Func<string[], bool> sectionOpen = (controllers) =>
         controllers.Select(x => x.ToLower()).Contains(ctrl);
 
-    var ventasCtrls = new[] { "ventas", "clientes" };
-    var gastosCtrls = new[] { "gastos" };
-    var productosCtrls = new[] { "productos", "categorias", "tallastipo", "tipos", "unidades", "dimensiones" };
+    var ventasCtrls = new[] { "ventas" };
+    var productosCtrls = new[] { "productos" };
 
-    // === AÑADIDOS MÍNIMOS (corregido) ===
     var path = (ViewContext?.HttpContext?.Request?.Path.Value ?? "").ToLower();
     bool forceVentasOpen = path.Contains("/ventas/puntodeventa");
 }
 
-
 <nav class="sidebar" id="sidebar" aria-label="Navegación principal">
     <div class="logo">
-        <i class="bi bi-box"></i><span>TIENDA - S&J STYLE</span>
+        <i class="bi bi-box"></i><span>ÁREA COMERCIAL</span>
     </div>
 
-    <!-- PANEL -->
-    <div class="nav-section">
-        <div class="nav-title">Panel</div>
-        <a class="nav-link @active("home", "index")" asp-controller="Home" asp-action="Index">
-            <i class="bi bi-speedometer2"></i><span>Dashboard</span>
-        </a>
-    </div>
+    @* PANEL solo Admin *@
+    @if (isAdmin)
+    {
+        <div class="nav-section">
+            <div class="nav-title">Panel</div>
+            <a class="nav-link @active("home", "index")" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+            </a>
+        </div>
+    }
 
-    <!-- VENTAS -->
+    @* VENTAS (ambos) *@
     @{
-        // === CAMBIO MINIMO: abrimos Ventas también cuando la URL es /Ventas/PuntoDeVenta
         bool ventasOpen = forceVentasOpen || sectionOpen(ventasCtrls);
     }
     <div class="nav-section @(ventasOpen ? "open" : "")" data-section="ventas">
@@ -46,57 +43,59 @@
             <span class="left"><i class="bi bi-bag"></i><span>Ventas</span></span>
             <i class="bi bi-chevron-down"></i>
         </button>
-        <div class="nav-sub" style="@(ventasOpen ? "" : "display:none")">
-            <!-- Punto de venta => mantiene tu ruta /Ventas/PuntoDeVenta  -->
-            <!-- === CAMBIO MINIMO: si path es /ventas/puntodeventa forzamos "active" visual -->
-            <a class="nav-link @(active("ventas", "puntodeventa") + (path.Contains("/ventas/puntodeventa") ? " active" : ""))"
-               asp-controller="Ventas" asp-action="PuntoDeVenta">
-                <i class="bi bi-basket"></i><span>Punto de venta</span>
-            </a>
-            <a class="nav-link @active("ventas", "index")" asp-controller="Ventas" asp-action="Index">
-                <i class="bi bi-table"></i><span>Lista de ventas</span>
-            </a>
+        <ul class="nav-sub">
+            <li>
+                <a class="nav-link @(active("ventas", "puntodeventa") + (path.Contains("/ventas/puntodeventa") ? " active" : ""))"
+                   asp-controller="Ventas" asp-action="PuntoDeVenta">
+                    <i class="bi bi-basket"></i><span>Punto de venta</span>
+                </a>
+            </li>
+            <li>
+                <a class="nav-link @active("ventas", "index")" asp-controller="Ventas" asp-action="Index">
+                    <i class="bi bi-table"></i><span>Lista de ventas</span>
+                </a>
+            </li>
+            @* Clientes solo Admin *@
             @if (isAdmin)
             {
-                <a class="nav-link @active("clientes", "index")" asp-controller="Clientes" asp-action="Index">
-                    <i class="bi bi-people"></i><span>Clientes</span>
-                </a>
+                <li>
+                    <a class="nav-link @active("clientes", "index")" asp-controller="Clientes" asp-action="Index">
+                        <i class="bi bi-people"></i><span>Clientes</span>
+                    </a>
+                </li>
             }
-        </div>
+        </ul>
     </div>
 
-    <!-- GASTOS -->
-    @{
-        bool gastosOpen = sectionOpen(gastosCtrls);
+    @* GASTOS: SOLO Admin (oculto para Comercial) *@
+    @if (isAdmin)
+    {
+        <div class="nav-section" data-section="gastos">
+            <button class="nav-btn" type="button">
+                <span class="left"><i class="bi bi-cash-stack"></i><span>Gastos</span></span>
+                <i class="bi bi-chevron-down"></i>
+            </button>
+            <ul class="nav-sub">
+                <li>
+                    <a class="nav-link @active("gastos", "index")" asp-controller="Gastos" asp-action="Index">
+                        <i class="bi bi-card-checklist"></i><span>Egresos</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link @active("gastos", "autorizar")" asp-controller="Gastos" asp-action="Autorizar">
+                        <i class="bi bi-check2-circle"></i><span>Autorizar gastos</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="nav-link @active("gastos", "asignacion")" asp-controller="Gastos" asp-action="Asignacion">
+                        <i class="bi bi-diagram-3"></i><span>Asignación gastos</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
     }
-    <div class="nav-section @(gastosOpen ? "open" : "")" data-section="gastos">
-        <button class="nav-btn" type="button" aria-expanded="@(gastosOpen ? "true" : "false")">
-            <span class="left"><i class="bi bi-cash-stack"></i><span>Gastos</span></span>
-            <i class="bi bi-chevron-down"></i>
-        </button>
-        <div class="nav-sub" style="@(gastosOpen ? "" : "display:none")">
-            @if (isCom)
-            {
-                <a class="nav-link @active("gastos", "index")" asp-controller="Gastos" asp-action="Index">
-                    <i class="bi bi-card-checklist"></i><span>Lista de gastos</span>
-                </a>
-            }
-            @if (isAdmin)
-            {
-                <a class="nav-link @active("gastos", "index")" asp-controller="Gastos" asp-action="Index">
-                    <i class="bi bi-card-checklist"></i><span>Egresos</span>
-                </a>
-                <a class="nav-link @active("gastos", "autorizar")" asp-controller="Gastos" asp-action="Autorizar">
-                    <i class="bi bi-check2-circle"></i><span>Autorizar gastos</span>
-                </a>
-                <a class="nav-link @active("gastos", "asignacion")" asp-controller="Gastos" asp-action="Asignacion">
-                    <i class="bi bi-diagram-3"></i><span>Asignación gastos</span>
-                </a>
-            }
-        </div>
-    </div>
 
-    <!-- PRODUCTOS -->
+    @* PRODUCTOS (ambos, solo lista para Comercial) *@
     @{
         bool productosOpen = sectionOpen(productosCtrls);
     }
@@ -105,38 +104,97 @@
             <span class="left"><i class="bi bi-box-seam"></i><span>Productos</span></span>
             <i class="bi bi-chevron-down"></i>
         </button>
-        <div class="nav-sub" style="@(productosOpen ? "" : "display:none")">
-            <a class="nav-link @active("productos", "index")" asp-controller="Productos" asp-action="Index">
-                <i class="bi bi-list-ul"></i><span>Lista de productos</span>
-            </a>
+        <ul class="nav-sub">
+            <li>
+                <a class="nav-link @active("productos", "index")" asp-controller="Productos" asp-action="Index">
+                    <i class="bi bi-list-ul"></i><span>Lista de productos</span>
+                </a>
+            </li>
             @if (isAdmin)
             {
-                <a class="nav-link @active("productos", "tallasprecios")" asp-controller="Productos" asp-action="TallasPrecios">
-                    <i class="bi bi-sliders"></i><span>Tallas y precios</span>
-                </a>
-                <a class="nav-link @active("categorias", "index")" asp-controller="Categorias" asp-action="Index">
-                    <i class="bi bi-layers"></i><span>Categoría / Subcategorías</span>
-                </a>
-                <a class="nav-link @active("tallastipo", "index")" asp-controller="TallasTipo" asp-action="Index">
-                    <i class="bi bi-grid-3x3"></i><span>Tallas por tipo</span>
-                </a>
-                <a class="nav-link @active("tipos", "index")" asp-controller="Tipos" asp-action="Index">
-                    <i class="bi bi-box"></i><span>Tipo de productos</span>
-                </a>
-                <a class="nav-link @active("unidades", "index")" asp-controller="Unidades" asp-action="Index">
-                    <i class="bi bi-rulers"></i><span>Unidades</span>
-                </a>
-                <a class="nav-link @active("dimensiones", "index")" asp-controller="Dimensiones" asp-action="Index">
-                    <i class="bi bi-aspect-ratio"></i><span>Dimensiones</span>
-                </a>
+                <li><a class="nav-link @active("productos", "tallasprecios")" asp-controller="Productos" asp-action="TallasPrecios"><i class="bi bi-sliders"></i><span>Tallas y precios</span></a></li>
+                <li><a class="nav-link @active("categorias", "index")" asp-controller="Categorias" asp-action="Index"><i class="bi bi-layers"></i><span>Categorías</span></a></li>
+                <li><a class="nav-link @active("tallastipo", "index")" asp-controller="TallasTipo" asp-action="Index"><i class="bi bi-grid-3x3"></i><span>Tallas por tipo</span></a></li>
+                <li><a class="nav-link @active("tipos", "index")" asp-controller="Tipos" asp-action="Index"><i class="bi bi-box"></i><span>Tipo de productos</span></a></li>
+                <li><a class="nav-link @active("unidades", "index")" asp-controller="Unidades" asp-action="Index"><i class="bi bi-rulers"></i><span>Unidades</span></a></li>
+                <li><a class="nav-link @active("dimensiones", "index")" asp-controller="Dimensiones" asp-action="Index"><i class="bi bi-aspect-ratio"></i><span>Dimensiones</span></a></li>
             }
-        </div>
+        </ul>
     </div>
 
-    <!-- SALIR -->
     <div class="nav-section">
         <a class="nav-link" asp-controller="Auth" asp-action="Logout" data-confirm="¿Deseas salir del sistema?">
             <i class="bi bi-box-arrow-right"></i><span>Salir</span>
         </a>
     </div>
 </nav>
+
+
+<!-- Script mínimo del acordeón (aislado al sidebar) -->
+<script>
+    (() => {
+      const sidebar  = document.getElementById('sidebar');
+      const sections = sidebar.querySelectorAll('.nav-section[data-section]');
+
+      const setOpen = (wrap, open) => {
+        const btn = wrap.querySelector('.nav-btn');
+        const sub = wrap.querySelector('.nav-sub');
+        wrap.classList.toggle('open', open);
+        btn?.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (!sub) return;
+        sub.style.overflow = 'hidden';
+        // Transición suave de altura
+        if (open) {
+          sub.style.maxHeight = sub.scrollHeight + 'px';
+        } else {
+          sub.style.maxHeight = '0px';
+        }
+      };
+
+      const closeAllExcept = (target) => {
+        sections.forEach(w => { if (w !== target) setOpen(w, false); });
+      };
+
+      // Estado inicial: si el servidor marcó varias "open", deja solo la primera abierta
+      let firstOpen = true;
+      sections.forEach(w => {
+        const isOpen = w.classList.contains('open');
+        if (isOpen && firstOpen) {
+          setOpen(w, true);
+          firstOpen = false;
+        } else {
+          setOpen(w, false);
+        }
+      });
+
+      // Wire de cada botón
+      sections.forEach(wrap => {
+        const btn = wrap.querySelector('.nav-btn');
+        const sub = wrap.querySelector('.nav-sub');
+        if (!btn || !sub) return;
+
+        // Click / toque: acordeón exclusivo
+        btn.addEventListener('click', () => {
+          const willOpen = !wrap.classList.contains('open');
+          if (willOpen) closeAllExcept(wrap);
+          setOpen(wrap, willOpen);
+        });
+
+        // Accesibilidad: Enter/Space también alternan
+        btn.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            const willOpen = !wrap.classList.contains('open');
+            if (willOpen) closeAllExcept(wrap);
+            setOpen(wrap, willOpen);
+          }
+        });
+
+        // Recalcular altura si cambia el contenido
+        new ResizeObserver(() => {
+          if (wrap.classList.contains('open')) sub.style.maxHeight = sub.scrollHeight + 'px';
+        }).observe(sub);
+      });
+    })();
+</script>
+

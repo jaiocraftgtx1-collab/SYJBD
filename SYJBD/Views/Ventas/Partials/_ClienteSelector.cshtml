@@ -1,0 +1,91 @@
+﻿<div class="modal-header">
+    <h5 class="modal-title">Seleccionar cliente</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+
+<div class="modal-body">
+    <div class="input-group mb-2">
+        <input id="cli-q" class="form-control" placeholder="Buscar por nombre o RUC/DNI..." autocomplete="off">
+        <button id="cli-find" class="btn btn-primary" type="button" title="Buscar">
+            <i class="bi bi-search"></i>
+        </button>
+        <button id="cli-new" class="btn btn-outline-success" type="button" title="Nuevo">
+            <i class="bi bi-person-plus"></i> Nuevo
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Cliente</th>
+                    <th class="text-end" style="width:160px">RUC/DNI</th>
+                </tr>
+            </thead>
+            <tbody id="cli_rows"></tbody>
+
+        </table>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+</div>
+<script>
+    (() => {
+      console.log('[ClienteSelector] script cargado'); // para comprobar que este partial es el que corre
+
+      const $rows = document.getElementById('cli_rows');        // <-- el tbody que tienes en el modal
+      const $q    = document.getElementById('cli-q');            // input de búsqueda
+      const $btn  = document.getElementById('cli-find');         // botón buscar
+
+      // Render directo usando las CLAVES reales del API: { id, nombre, ruc }
+          function render(list) {
+      if (!Array.isArray(list) || list.length === 0) {
+        $rows.innerHTML = `<tr><td colspan="2" class="text-center text-muted">Sin resultados</td></tr>`;
+        return;
+      }
+
+      $rows.innerHTML = list.map(r => `
+        <tr class="cli-row" data-id="${r.id}" data-nombre="${r.nombre}" data-doc="${r.ruc}">
+          <td>
+            <div class="fw-semibold">${r.nombre}</div>
+            <div class="text-muted small">${r.id}</div>
+          </td>
+          <td class="text-end">${r.ruc || ''}</td>
+        </tr>
+      `).join('');
+
+      $rows.querySelectorAll('tr.cli-row').forEach(tr => {
+        tr.addEventListener('click', () => {
+          const id  = tr.dataset.id || '';
+          const nom = tr.dataset.nombre || '';
+          const doc = tr.dataset.doc || '';
+          const idInput = document.getElementById('txtIdCliente');
+          const nomInput = document.getElementById('txtClienteNombre');
+          if (idInput)  idInput.value  = id;
+          if (nomInput) nomInput.value = doc ? `${nom} (${doc})` : nom;
+          document.querySelector('[data-bs-dismiss="modal"]')?.click();
+        });
+      });
+    }
+
+
+      async function buscar() {
+        const q = ($q?.value || '').trim();
+        const url = `/api/ventas/buscar-clientes?q=${encodeURIComponent(q)}`;
+        console.log('[ClienteSelector] GET', url);
+        const res  = await fetch(url);
+        const data = await res.json();       // <- [{ id, nombre, ruc }]
+        console.table(data);
+        render(data);
+      }
+
+      // Eventos
+      $btn?.addEventListener('click', buscar);
+      $q?.addEventListener('keydown', e => { if (e.key === 'Enter') buscar(); });
+
+      // Carga inicial
+      buscar();
+    })();
+</script>

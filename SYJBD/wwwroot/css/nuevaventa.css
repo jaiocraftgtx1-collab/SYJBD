@@ -1,0 +1,954 @@
+﻿/* ===========================================================
+   NUEVA VENTA – layout + tabla
+   =========================================================== */
+
+/* --------- Cabecera de la tabla --------- */
+.nv-th th {
+    background: #0f172a;
+    color: #e5e7eb;
+    font-weight: 700;
+    border: 0;
+    padding: 10px 12px !important;
+    height: 46px;
+    vertical-align: middle;
+}
+
+    /* Asegura que también pinte la última (acciones) en todas las vistas */
+    .nv-th th:last-child,
+    .nv-th th.det-act {
+        background: #0f172a !important;
+    }
+
+/* --------- Tabla (rompe estilos globales) --------- */
+.tbl-detalle {
+    display: table !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: separate !important;
+    border-spacing: 0;
+}
+
+    .tbl-detalle thead, .tbl-detalle tbody {
+        display: table-row-group !important;
+    }
+
+    .tbl-detalle tr {
+        display: table-row !important;
+    }
+
+    .tbl-detalle th, .tbl-detalle td {
+        display: table-cell !important;
+        padding: 6px 8px !important;
+        vertical-align: top;
+    }
+
+/* Anchos base (desktop/tablet) */
+:root {
+    --det-q: 92px; /* Cant */
+    --det-p: 92px; /* P.U. */
+    --det-i: 104px; /* Total */
+    --det-act: 44px; /* Acciones */
+}
+
+.tbl-detalle thead th:nth-child(2),
+.tbl-detalle tbody td:nth-child(2) {
+    width: var(--det-q) !important;
+    text-align: center;
+}
+
+.tbl-detalle thead th:nth-child(3),
+.tbl-detalle tbody td:nth-child(3) {
+    width: var(--det-p) !important;
+    text-align: center;
+}
+
+.tbl-detalle thead th:nth-child(4),
+.tbl-detalle tbody td:nth-child(4) {
+    width: var(--det-i) !important;
+    text-align: right;
+}
+
+.tbl-detalle thead th:nth-child(5),
+.tbl-detalle tbody td:nth-child(5) {
+    width: var(--det-act) !important;
+}
+
+/* Producto multirenglón controlado */
+td.det-prod {
+    overflow: hidden;
+    line-height: 1.15;
+}
+
+    td.det-prod .p-nom {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 6;
+        overflow: hidden;
+        word-break: break-word;
+        hyphens: auto;
+        font-weight: 600;
+    }
+
+    td.det-prod .p-sub {
+        color: #6c757d;
+        font-size: .86rem;
+    }
+
+/* Inputs compactos */
+.det-cant, .det-pre, .det-imp-inp {
+    width: 100% !important;
+    max-width: none !important;
+    height: 32px;
+    line-height: 32px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+    .det-imp-inp[readonly] {
+        background: #eee;
+        color: #333;
+        cursor: default;
+    }
+
+/* Evita “sticky last column” heredado */
+@media (max-width:1200px) {
+    .tbl-detalle thead th:last-child,
+    .tbl-detalle tbody td:last-child {
+        position: static !important;
+        right: auto !important;
+        z-index: auto !important;
+        background: inherit !important;
+        box-shadow: none !important;
+        width: auto !important;
+    }
+}
+
+/* ===========================================================
+   Layout responsive NUEVA VENTA
+   =========================================================== */
+
+/* PC (≥992px): detalle + totales en horizontal */
+@media (min-width:992px) {
+    .nv-row {
+        display: grid;
+        grid-template-columns: 1fr 360px; /* detalle | totales */
+        gap: 16px;
+        align-items: start;
+    }
+}
+
+/* Tablet/PC: cartas normales */
+.nv-card {
+    border-radius: .65rem;
+}
+
+    .nv-card .card-body {
+        padding: 16px;
+    }
+
+/* Mobile (≤640px): full-bleed sin bordes/sombras y sin márgenes laterales */
+@media (max-width:640px) {
+    /* elimina el “margen rojo” de los laterales */
+    .container-xxl {
+        padding-left: 0px !important;
+        padding-right: 0px !important;
+    }
+
+    /* todas las tarjetas planas y sin radios */
+    .nv-card {
+        border: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding-left: 0px !important;
+        padding-right: 0px !important;
+    }
+
+        .nv-card .card-body {
+            padding-left: 5px;
+            padding-right: 5px;
+
+        }
+    .nv-page h2.mb-3 {
+        margin-bottom: .5rem !important;
+    }
+
+    .nv-card .mb-3 {
+        margin-bottom: .5rem !important;
+    }
+
+    .nv-card hr {
+        margin: .4rem 0 !important;
+    }
+        /* la tabla ocupa todo el ancho del viewport */
+        .nv-card .table-responsive {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            border-radius: 0 !important;
+        }
+
+    /* proporciones por colgroup (con columna de acciones visible) */
+    .tbl-detalle col:first-child {
+        width: 50% !important;
+    }
+    /* Producto */
+    .tbl-detalle col:nth-child(2) {
+        width: 20% !important;
+    }
+    /* Cant */
+    .tbl-detalle col:nth-child(3) {
+        width: 20% !important;
+    }
+    /* P.U. */
+    .tbl-detalle col:nth-child(4) {
+        width: 20% !important;
+    }
+    /* Total */
+    .tbl-detalle col:nth-child(5) {
+        width: 44px !important;
+    }
+    /* Acciones fija */
+
+    /* anula widths por-celda para que gobierne el colgroup */
+    .tbl-detalle thead th:nth-child(2),
+    .tbl-detalle tbody td:nth-child(2),
+    .tbl-detalle thead th:nth-child(3),
+    .tbl-detalle tbody td:nth-child(3),
+    .tbl-detalle thead th:nth-child(4),
+    .tbl-detalle tbody td:nth-child(4),
+    .tbl-detalle thead th:nth-child(5),
+    .tbl-detalle tbody td:nth-child(5) {
+        width: auto !important;
+        white-space: nowrap;
+    }
+
+    /* producto con 2 líneas */
+    td.det-prod .p-nom {
+        -webkit-line-clamp: 5;
+    }
+
+    /* margen inferior extra bajo la tabla antes de “Totales” */
+    .nv-underbar {
+        height: 1px;
+        background: #e9ecef;
+        border-radius: 4px;
+        margin-top: 2px;
+    }
+}
+
+/* Asegura que el encabezado de acciones SIEMPRE tenga el mismo fondo */
+@media (max-width:991.98px) {
+    .tbl-detalle thead th.det-act,
+    .tbl-detalle thead th:last-child {
+        background: #0f172a !important;
+    }
+}
+/* ========= NUEVA VENTA – MOBILE FULL BLEED + HEADER ACCIONES ========= */
+
+/* 1) MÓVIL ≤640: sin márgenes laterales en la página y sin bordes/sombras en las 3 cards */
+@media (max-width:640px) {
+    /* quita los márgenes laterales que vienen del layout */
+    .nv-page .content,
+    .nv-page .container-xxl {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* las tres tarjetas (cabecera, detalle, totales) sin borde ni sombra */
+    .nv-card {
+        border: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+        /* respiración interna y tabla al borde */
+        .nv-card .card-body {
+            padding-left: 1px;
+            padding-right: 1px;
+        }
+
+        .nv-card .table-responsive {
+            margin-left: -10px;
+            margin-right: -10px;
+        }
+}
+
+/* 2) Encabezado de la tabla de detalle (incluye columna de acciones) */
+.tbl-detalle thead th {
+    background: #0f172a;
+    color: #e5e7eb;
+    font-weight: 700;
+}
+
+    .tbl-detalle thead th:first-child {
+        border-top-left-radius: 12px;
+    }
+
+    .tbl-detalle thead th:last-child {
+        border-top-right-radius: 12px;
+    }
+
+/* Para que la cabecera de “acciones” NO quede blanca en tablet/móvil */
+@media (max-width:1024px) {
+    .tbl-detalle thead th:last-child,
+    .tbl-detalle tbody td:last-child {
+        position: sticky;
+        right: 0;
+        z-index: 3;
+        background: #fff;
+        white-space: nowrap;
+    }
+
+    .tbl-detalle thead th:last-child {
+        background: #0f172a !important;
+        color: #e5e7eb !important;
+        z-index: 4;
+    }
+}
+
+/* ===== Compactar espacios entre columnas ===== */
+
+/* 1) Celdas con menos padding (reduce separación visual) */
+.tbl-detalle th,
+.tbl-detalle td {
+    padding: 2px 2px !important; /* antes 6px 8px / 10px 12px en <th> */
+}
+
+/* Encabezado aún más compacto si quieres */
+.nv-th th {
+    padding: 5px 5px !important;
+    height: 40px;
+}
+
+/* 2) Inputs sin sangría extra y sin mínimos que empujen la columna */
+.tbl-detalle .form-control,
+.det-cant, .det-pre, .det-imp-inp {
+    padding: .30rem .45rem; /* menos relleno interno */
+    min-width: 0; /* permite que encojan en tablas */
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* ====== NV Totales – tamaños responsivos ====== */
+
+/* MÓVIL (≤640px): base */
+.nv-totals h6 {
+    font-size: 1rem;
+}
+/* título "Totales" */
+.nv-totals .d-flex.justify-content-between > span:first-child {
+    font-size: .95rem; /* etiquetas: Items, IGV, SubTotal */
+}
+
+.nv-totals .d-flex.justify-content-between > span:last-child {
+    font-size: 1rem; /* valores numéricos */
+    font-variant-numeric: tabular-nums; /* alineación bonita de números */
+}
+
+.nv-totals .d-flex.fw-bold > span:last-child {
+    font-size: 1.4rem; /* GRAN TOTAL */
+}
+
+/* TABLET (≥641px) */
+@media (min-width: 641px) {
+    .nv-totals h6 {
+        font-size: 1.05rem;
+    }
+
+    .nv-totals .d-flex.justify-content-between > span:first-child {
+        font-size: 1rem;
+    }
+
+    .nv-totals .d-flex.justify-content-between > span:last-child {
+        font-size: 1.05rem;
+    }
+
+    .nv-totals .d-flex.fw-bold > span:last-child {
+        font-size: 1.6rem;
+    }
+}
+
+/* PC (≥992px) */
+@media (min-width: 992px) {
+    .nv-totals h6 {
+        font-size: 1.1rem;
+    }
+
+    .nv-totals .d-flex.justify-content-between > span:first-child {
+        font-size: 1.05rem;
+    }
+
+    .nv-totals .d-flex.justify-content-between > span:last-child {
+        font-size: 1.1rem;
+    }
+
+    .nv-totals .d-flex.fw-bold > span:last-child {
+        font-size: 1.8rem;
+    }
+}
+/* ====== Fila discreta + hover/actividad en detalle ====== */
+
+/* 0) Variables de tono (ajústalas) */
+:root {
+    --det-row-sep: #eaeef3; /* línea entre filas */
+    --det-row-hover: #d9d7db; /* fondo al pasar mouse */
+}
+
+/* 1) Separador muy sutil por cada fila (solo body) */
+.tbl-detalle tbody tr {
+    border-bottom: 1px solid var(--det-row-sep);
+}
+
+    .tbl-detalle tbody tr:last-child {
+        border-bottom: 0; /* sin línea final si prefieres */
+    }
+
+    /* 2) Hover MUY discreto (desktop y donde haya cursor) */
+    .tbl-detalle tbody tr:hover {
+        background-color: var(--det-row-hover);
+    }
+
+    /* 3) También resalta cuando la fila está activa/en edición (móvil o teclado) */
+    .tbl-detalle tbody tr:has(input:focus),
+    .tbl-detalle tbody tr:has(select:focus) {
+        background-color: var(--det-row-hover);
+        outline: 0;
+    }
+
+/* 4) Suaviza la transición */
+.tbl-detalle tbody tr {
+    transition: background-color .1s ease;
+}
+
+/* 5) Mantén el header intacto */
+.tbl-detalle thead tr {
+    border-bottom: 0;
+}
+
+
+
+/* ===== Modal Productos: alto/anchos y menos padding ===== */
+#app-modal .app-modal__box {
+    width: min(640px, 96vw);
+    max-height: 92dvh;
+    padding: 2px 0px; /* menos aire lateral */
+    border-radius: 10px;
+    display: flex;
+}
+
+#app-modal #app-modal-body {
+    padding: 10px 12px 8px;
+}
+
+/* lista más alta: ver más filas */
+#app-modal .table-responsive {
+    max-height: 40vh; /* ↑ ajusta a gusto */
+    overflow: auto;
+    margin: 0;
+}
+
+/* celdas e inputs más compactos */
+#prd-tbl th, #prd-tbl td {
+    padding: 8px 10px;
+    line-height: 1.2;
+    font-size: .95rem;
+}
+
+#prd-tbl .form-control.form-control-sm {
+    padding: .3rem .45rem;
+    height: 32px;
+    min-width: 0;
+}
+
+/* anchos de columnas (checkbox, cod, producto, talla, und, cant, p.unit) */
+#prd-tbl th:nth-child(1), #prd-tbl td:nth-child(1) {
+    width: 40px;
+}
+
+#prd-tbl th:nth-child(2), #prd-tbl td:nth-child(2) {
+    width: 84px;
+}
+
+#prd-tbl th:nth-child(3), #prd-tbl td:nth-child(3) {
+    width: auto;
+}
+/* PRODUCTO elástico */
+#prd-tbl th:nth-child(4), #prd-tbl td:nth-child(4) {
+    width: 70px;
+}
+
+#prd-tbl th:nth-child(5), #prd-tbl td:nth-child(5) {
+    width: 70px;
+}
+
+#prd-tbl th:nth-child(6), #prd-tbl td:nth-child(6) {
+    width: 110px;
+}
+
+#prd-tbl th:nth-child(7), #prd-tbl td:nth-child(7) {
+    width: 120px;
+}
+
+/* separador y hover sutil por fila */
+#prd-tbl tbody tr {
+    border-bottom: 1px solid #eef2f6;
+    transition: background .12s;
+}
+
+    #prd-tbl tbody tr:hover {
+        background: #f7f9fc;
+    }
+
+/* duplicados deshabilitados (ver B) */
+#prd-tbl tr.is-dup {
+    background: #fafbfc;
+    opacity: .6;
+}
+
+    #prd-tbl tr.is-dup input {
+        pointer-events: none;
+    }
+
+/* ===== Modal Productos: filas compactas ===== */
+#app-modal {
+    font-size: 14px;
+}
+    /* base más pequeña en el modal */
+
+    #app-modal .list-group-item {
+        padding: 6px 8px !important; /* antes ~12–16px */
+        line-height: 1.15 !important;
+        gap: 8px !important; /* menos separación entre columnas */
+    }
+
+        /* Bloques dentro de cada fila (tu estructura de label + flex) */
+        #app-modal .list-group-item .fw-semibold {
+            font-size: 14px; /* nombre */
+            line-height: 1.15;
+        }
+
+        #app-modal .list-group-item .text-muted {
+            font-size: 12px; /* sublínea (código/talla) */
+            line-height: 1.1;
+        }
+
+        /* Precio a la derecha, compacto y sin romper líneas */
+        #app-modal .list-group-item .fr-bold {
+            font-size: 15px; /* puede bajarse a 14 si necesitas aún menos alto */
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+
+        /* Checkbox pequeño y alineado */
+        #app-modal .list-group-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            margin-top: 2px;
+        }
+
+/* Versión con tabla (si usas #prd-tbl) */
+#prd-tbl th, #prd-tbl td {
+    padding: 6px 8px !important;
+    line-height: 1.15 !important;
+    font-size: 13.5px;
+}
+
+#prd-tbl .form-control.form-control-sm {
+    height: 28px; /* antes 32px */
+    padding: .25rem .4rem;
+    font-size: 13px;
+}
+/* ===== ClienteSelector – fix header + anchos en desktop ===== */
+#app-modal .table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#app-modal thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #0f172a;
+    color: #fff;
+    padding: 10px 12px; /* da alto al thead (evita la “línea” delgada) */
+    font-weight: 600;
+}
+
+    #app-modal thead th:first-child {
+        border-top-left-radius: 8px;
+    }
+
+    #app-modal thead th:last-child {
+        border-top-right-radius: 8px;
+    }
+
+/* Anchos de columnas (2 columnas: Cliente | RUC/DNI) */
+#app-modal table thead th:nth-child(1),
+#app-modal table tbody td:nth-child(1) {
+    width: auto;
+}
+
+#app-modal table thead th:nth-child(2),
+#app-modal table tbody td:nth-child(2) {
+    width: 180px;
+    text-align: right;
+}
+
+/* Filas: compactas y alineadas */
+#app-modal #cli_rows td {
+    padding: 8px 10px;
+    line-height: 1.2;
+}
+
+#app-modal #cli_rows tr {
+    border-bottom: 1px solid #eef2f6;
+}
+
+    #app-modal #cli_rows tr:hover {
+        background: #f7f9fc;
+    }
+
+/* Modal un poco más ancho en PC */
+@media (min-width: 992px) {
+    #app-modal .app-modal__box {
+        width: min(720px, 62vw);
+    }
+}
+/* separación vertical compacta entre bloques */
+.v-stack-12 > * + * {
+    margin-top: 12px;
+}
+
+/* grupo con icono */
+.pay-group .pay-preview {
+    background: #fff;
+    padding: 0;
+    width: 56px; /* lado del preview */
+    min-width: 56px;
+    border-top-left-radius: 12px !important;
+    border-bottom-left-radius: 12px !important;
+    display: grid;
+    place-items: center;
+}
+
+    .pay-group .pay-preview img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        display: block;
+    }
+
+/* redondeo del select para integrarlo con el preview */
+.pay-group .form-select {
+    border-top-right-radius: 12px !important;
+    border-bottom-right-radius: 12px !important;
+}
+
+
+
+
+
+/* =========================================================
+   VER VENTA (modal) – mobile friendly + tipografías
+   ========================================================= */
+
+/* ---- Escalas de fuente (elige en el contenedor: vd--sm/md/lg) ---- */
+.vd {
+    --vd-fs: 14px;
+    --vd-fs-sm: .9rem;
+    --vd-fs-md: 1rem;
+    --vd-fs-lg: 1.1rem;
+}
+
+.vd--sm {
+    --vd-fs: 13px;
+}
+
+.vd--md {
+    --vd-fs: 14px;
+}
+/* por defecto */
+.vd--lg {
+    --vd-fs: 16px;
+}
+
+.vd {
+    font-size: var(--vd-fs);
+    line-height: 1.25;
+}
+
+/* ---- Lateral “full-bleed” en móvil (≤640) ---- */
+@media (max-width:640px) {
+    #app-modal .app-modal__box {
+        width: min(720px, 96vw);
+    }
+
+    .vd {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+    /* menos margen a los lados */
+}
+
+/* ---- Secciones + separadores (solo móvil) ---- */
+.vd-sec + .vd-sec {
+    margin-top: 10px;
+}
+
+@media (max-width:640px) {
+    .vd-sec {
+        background: #fff;
+        border-radius: 10px;
+    }
+
+        .vd-sec + .vd-sec {
+            border-top: 1px dashed #e5e7eb;
+            padding-top: 8px;
+        }
+}
+
+/* ---- Cabecera compacta ---- */
+.vd-head h5, .vd-head .h5 {
+    margin: 0 0 4px 0;
+}
+
+.vd-head .badge {
+    transform: translateY(-1px);
+}
+
+/* ---- Tabla: usa tu styling de NuevaVenta ---- */
+.vd-detalle .tbl-detalle {
+    width: 100% !important;
+}
+
+    .vd-detalle .tbl-detalle th,
+    .vd-detalle .tbl-detalle td {
+        padding: 6px 8px !important;
+    }
+
+    .vd-detalle .tbl-detalle .nv-th th {
+        height: 40px;
+    }
+
+/* En móvil reduce fuentes aún más dentro de la tabla */
+@media (max-width:640px) {
+    .vd-detalle .tbl-detalle {
+        font-size: 13px;
+    }
+
+        .vd-detalle .tbl-detalle thead th {
+            padding: 5px 6px !important;
+        }
+}
+
+/* ---- Cliente / Totales en tarjetas apiladas en móvil ---- */
+.vd-cliente .card, .vd-pagos .card {
+    border-radius: 12px;
+}
+
+@media (max-width:640px) {
+    .vd-cliente, .vd-pagos {
+        padding-left: 2px;
+        padding-right: 2px;
+    }
+}
+
+/* ---- Totales: números alineados tipo “tabular” ---- */
+.vd .num {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- Botones: pegan a los bordes en móvil ---- */
+@media (max-width:640px) {
+    .vd-acciones .btn {
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+        .vd-acciones .btn + .btn {
+            margin-left: 0;
+        }
+}
+
+/* ---- Encabezado de la tabla siempre oscuro (igual que NV) ---- */
+.vd .nv-th th:last-child, .vd .nv-th th.det-act {
+    background: #0f172a !important;
+    color: #e5e7eb;
+}
+/* ===== VentaDetalle (modal) – optimización móvil ===== */
+
+/* 1) Reducir el padding horizontal del host y del contenedor en móvil */
+@media (max-width:640px) {
+    /* el body del modal */
+    #app-modal #app-modal-body {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+    /* el container que usa el partial (container-fluid) */
+    .nv-page .container-fluid {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+}
+
+/* 2) Separación extra entre “Método de pago” y los botones */
+.nv-pay {
+    margin-bottom: .9rem;
+}
+
+@media (max-width:640px) {
+    .nv-pay {
+        margin-bottom: 1.1rem; /* un poco más de respiro en celular */
+    }
+}
+/* ===== ModalHost: layout para que el body sea scrollable y el footer quede fijo ===== */
+#app-modal .app-modal__box {
+    display: flex;
+    flex-direction: column;
+    max-height: 92dvh; /* deja espacio para la barra del SO */
+}
+
+/* El contenedor que inyectamos en los parciales */
+#app-modal .mh {
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* permite que el hijo haga overflow */
+}
+
+/* Zona scrollable (cuerpo del modal) */
+#app-modal .mh-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Footer siempre visible */
+#app-modal .mh-footer {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding-top: .6rem;
+    margin-top: .6rem;
+    border-top: 1px solid #e9ecef;
+    z-index: 2;
+}
+
+/* Un poco menos de padding horizontal en móvil para ganar ancho útil */
+@media (max-width:640px) {
+    #app-modal #app-modal-body {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+}
+/* ===== VD blocks: líneas arriba/abajo + respiración ===== */
+.vd-sec {
+    position: relative;
+    padding: 10px 4px; /* respiro dentro del bloque */
+}
+
+    /* línea superior e inferior con separación */
+    .vd-sec::before,
+    .vd-sec::after {
+        content: "";
+        display: block;
+        height: 1px;
+        /* línea sutil; en móvil va “segmentada” */
+        background: repeating-linear-gradient( 90deg, #e5e7eb, #e5e7eb 6px, transparent 6px, transparent 12px );
+        opacity: .95;
+    }
+
+    .vd-sec::before {
+        margin-bottom: 8px;
+    }
+    /* margen superior */
+    .vd-sec::after {
+        margin-top: 8px;
+    }
+    /* margen inferior */
+
+    /* no dibujar línea superior en el 1º ni inferior en el último */
+    .vd-sec:first-child::before {
+        display: none;
+    }
+
+    .vd-sec:last-child::after {
+        display: none;
+    }
+
+/* En tablet/PC usa línea continua (más “seria”) */
+@media (min-width: 641px) {
+    .vd-sec::before,
+    .vd-sec::after {
+        background: #e5e7eb;
+    }
+}
+/* ===== CajaReporte – afinado visual en el modal ===== */
+
+/* Menos “aire” en el header cuando está dentro del modal */
+#app-modal .crx-header.crx-header--compact {
+    padding: 8px 10px;
+    border-radius: 12px;
+}
+
+/* Cards un pelín más compactas dentro del modal */
+#app-modal .crx-card {
+    padding: 12px;
+    border-radius: 12px;
+}
+
+/* Tablas: 100% del contenedor y layout fijo (para truncar con scroll si hace falta) */
+#app-modal .crx-table table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+/* Contenedor scroll horizontal para tablas anchas (Gastos/Top) */
+#app-modal .crx-table__scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Celdas compactas */
+#app-modal .crx-table thead th,
+#app-modal .crx-table tbody td {
+    padding: 10px 12px;
+    white-space: nowrap;
+}
+
+/* En móvil: full-bleed real, sin bordes laterales sobrantes */
+@media (max-width:640px) {
+    #app-modal #app-modal-body {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+
+    #app-modal .crx-wrapper {
+        gap: 12px;
+    }
+
+    #app-modal .crx-card {
+        margin: 0;
+        border-radius: 10px;
+    }
+        /* Tablas: tamaño mínimo para evitar compresión; el resto se ve con scroll horizontal */
+        #app-modal .crx-card .crx-table__scroll table {
+            min-width: 540px; /* ajusta si necesitas más/menos */
+        }
+        /* Separación vertical discreta entre bloques */
+        #app-modal .crx-card + .crx-card {
+            margin-top: 6px;
+        }
+}
+
+/* Alineaciones utilitarias (por si faltan) */
+.ta-right {
+    text-align: right;
+}
+
+.ta-center {
+    text-align: center;
+}

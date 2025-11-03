@@ -1,0 +1,253 @@
+﻿@using SYJBD.Services
+@model IReadOnlyList<ProductoTallaPrecioVM>
+
+@{
+    var idProd = (int)(ViewBag.IdProducto ?? 0);
+    var nomProd = (string)(ViewBag.NombreProducto ?? "");
+}
+
+<!-- Anti-forgery + IdProducto -->
+<form id="js-anti">
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="js-id-producto" value="@idProd" />
+</form>
+
+<style>
+    /* ======= Contenedor ======= */
+    .pp-wrap {
+        --pp-max: 860px;
+        --pp-pad-x: 5px;
+        --pp-gap-y: 5px;
+        width: min(100%, var(--pp-max));
+        margin-inline: auto;
+        background: #fff;
+        border: 1px solid #e6e9f2;
+        border-radius: 18px;
+        box-shadow: 0 24px 48px rgba(16,24,40,.08);
+    }
+
+    /* ======= Cabecera (estática, NO sticky) ======= */
+    .pp-head {
+        padding: 16px var(--pp-pad-x) 8px;
+        border-bottom: 1px solid #eef1f6;
+    }
+
+    .pp-title {
+        margin: 0 0 6px 0;
+        font-weight: 700;
+        font-size: 1rem;
+        color: #0b1225;
+        line-height: 1.25;
+    }
+
+    .pp-meta {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 8px;
+
+    }
+
+    .pp-chip {
+        display: inline-block;
+        padding: .15rem .5rem;
+        border-radius: 999px;
+        font-size: .9rem;
+        font-weight: 700;
+        border: 1px solid #e6e9f2;
+        background: #f5f7fb;
+        color: #3b4758;
+    }
+
+    .pp-hint {
+        margin: 0;
+        font-size: .8rem;
+        color: #7a8699;
+    }
+
+    /* ======= Tabla / filas ======= */
+    .pp-table-wrap {
+        padding: 8px var(--pp-pad-x) 16px;
+    }
+
+    table.pp-table {
+        width: 100%;
+        table-layout: fixed; /* fija 1ª y 3ª col; la central se adapta */
+        border-collapse: separate;
+        border-spacing: 0 var(--pp-gap-y); /* “cards” verticales */
+    }
+
+    .pp-td {
+        background: #fff;
+        border: 1px solid #e6e9f2;
+        border-radius: 12px;
+        padding: 6px 8px;
+        vertical-align: middle;
+    }
+
+        /* Col 1: TALLA (pastilla gris clarito) */
+        .pp-td:first-child {
+            width: 84px; /* desktop */
+            background: #eef1f6;
+            color: #0b1225;
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: .02em;
+            border-color: #eef1f6;
+        }
+
+    /* Col 2: PRECIO */
+    .pp-price input[type="text"] {
+        width: 100%;
+        height: 40px;
+        text-align: right;
+        border: 1px solid #d5dbe8;
+        border-radius: 10px;
+        padding: .35rem .6rem;
+        outline: none;
+        transition: box-shadow .15s, border-color .15s;
+        font-size: .98rem;
+        background: #fff;
+    }
+
+        .pp-price input[type="text"]:focus {
+            border-color: #7aa7ff;
+            box-shadow: 0 0 0 4px rgba(90,145,255,.18);
+        }
+
+    /* Col 3: ACCIÓN */
+    .pp-actions {
+        display: flex;
+        justify-content: flex-start;
+    }
+
+    .pp-btn {
+        border: 1px solid #18b980;
+        color: #16a46f;
+        background: #ecfff8;
+        border-radius: 999px;
+        padding: .34rem .7rem;
+        font-size: .86rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+        .pp-btn[disabled] {
+            opacity: .55;
+            cursor: not-allowed;
+        }
+
+    /* Selección visible al enfocar */
+    .sel-all::selection {
+        background: #cfe4ff;
+    }
+
+    /* ======= Responsive ======= */
+    @@media (max-width: 1024px) {
+        .pp-td:first-child {
+            width: 76px;
+        }
+        /* tallas algo más compactas */
+        .pp-price input[type="text"] {
+            height: 36px;
+            font-size: .95rem;
+        }
+
+        .pp-btn {
+            padding: .32rem .62rem;
+        }
+
+        .pp-td:nth-child(1) {
+            width: 40px
+        }
+
+        .pp-td:nth-child(2) {
+            width: 150px
+        }
+
+        .pp-td:nth-child(3) {
+            width: 30px
+        }
+    }
+
+    @@media (max-width: 430px) {
+        .pp-head {
+            padding: 12px var(--pp-pad-x) 6px;
+        }
+
+        .pp-title {
+            font-size: .96rem;
+        }
+
+        .pp-td {
+            padding: 6px;
+        }
+
+            .pp-td:first-child {
+                width: 64px;
+                font-size: .92rem;
+            }
+
+        .pp-btn {
+            padding: .28rem .56rem;
+            font-size: .84rem;
+        }
+
+        .pp-td:nth-child(1) {
+            width: 70px
+        }
+
+        .pp-td:nth-child(2) {
+            width: 120px
+        }
+
+        .pp-td:nth-child(3) {
+            width: 80px
+        }
+
+
+
+    }
+
+</style>
+
+<div class="pp-wrap">
+    <div class="pp-head">
+        <div class="pp-meta">
+            <span class="pp-chip">@nomProd</span>
+            <span class="pp-chip">#@idProd</span>
+        </div>
+        <p class="pp-hint">Ingresa los precios y pulsa <strong>Guardar</strong> por fila. Formato: <code>0.00</code></p>
+    </div>
+
+    <div class="pp-table-wrap">
+        <table class="pp-table" aria-label="Precios por talla">
+            <tbody>
+                @foreach (var it in Model)
+                {
+                    <tr data-talla="@it.IdTalla">
+                        <td class="pp-td">@it.IdTalla</td>
+
+                        <td class="pp-td">
+                            <div class="pp-price">
+                                <input type="text"
+                                       class="js-precio sel-all"
+                                       inputmode="decimal"
+                                       autocomplete="off"
+                                       value="@(it.Precio.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
+                                       aria-label="Precio para la talla @it.IdTalla" />
+                            </div>
+                        </td>
+
+                        <td class="pp-td">
+                            <div class="pp-actions">
+                                <button type="button" class="pp-btn js-save">Guardar</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

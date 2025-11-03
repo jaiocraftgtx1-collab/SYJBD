@@ -9,38 +9,54 @@ namespace SYJBD.Models
     {
         [Key]
         [Column("id_kardex")]
-        public long IdKardex { get; set; }
+        public int IdKardex { get; set; }
 
-        [Required]
+        [Column("tipo_movimiento"), StringLength(3)]
+        public string TipoMovimiento { get; set; } = null!;   // SV / EN / etc.
+
+        [Column("tipo_ref"), StringLength(30)]
+        public string? TipoRef { get; set; }
+
+        [Column("doc_ref"), StringLength(30)]
+        public string? DocRef { get; set; }
+
+        [Column("nro_doc"), StringLength(20)]
+        public string? NroDoc { get; set; }
+
+        [Column("id_origen")]
+        public int? IdOrigen { get; set; }
+
+        [Column("fecha_movimiento")]
+        public DateTime FechaMovimiento { get; set; }
+
         [Column("id_producto")]
         public int IdProducto { get; set; }
 
-        // id_origen = id_venta cuando tipo_movimiento = 'SV'
-        [Required]
-        [Column("id_origen")]
-        public long IdOrigen { get; set; }
+        [Column("id_talla"), StringLength(10)]
+        public string IdTalla { get; set; } = null!;
 
-        [Column("id_talla", TypeName = "varchar(10)")]
-        public string? IdTalla { get; set; }
+        [Column("id_unidad"), StringLength(10)]
+        public string? IdUnidad { get; set; } = "UND";
 
-        [Required]
-        [Column("tipo_movimiento", TypeName = "varchar(5)")]
-        public string TipoMovimiento { get; set; } = ""; // 'SV' para salida por venta
-
-        [Required]
-        [Column("cantidad_movida")]
+        [Column("cantidad_movida", TypeName = "decimal(10,2)")]
         public decimal CantidadMovida { get; set; }
 
-        [Required]
+        [Column("costo_unitario", TypeName = "decimal(10,2)")]
+        public decimal? CostoUnitario { get; set; }
+
         [Column("costo_total", TypeName = "decimal(12,2)")]
-        public decimal CostoTotal { get; set; }
+        public decimal? CostoTotal { get; set; }
 
-        // ACTIVO / ANULADO
-        [Required]
-        [Column("estado", TypeName = "varchar(20)")]
-        public string Estado { get; set; } = "ACTIVO";
+        [Column("moneda"), StringLength(10)]
+        public string? Moneda { get; set; } = "SOLES";
 
-        [Column("fecha_registro")]
-        public DateTime? FechaRegistro { get; set; }
+        [Column("tipo_cambio", TypeName = "decimal(10,4)")]
+        public decimal? TipoCambio { get; set; } = 1.0000m;
+
+        [Column("id_usuario"), StringLength(10)]
+        public string IdUsuario { get; set; } = null!;
+
+        [Column("estado"), StringLength(10)]
+        public string? Estado { get; set; } = "ACTIVO";
     }
 }

@@ -1,0 +1,119 @@
+﻿@model SVJBD.Models.Ventas.CajaCerrarVM
+@using System.Security.Claims
+@{
+    Layout = null;
+    decimal esperado = Model.EfectivoEsperado;
+    var userIdCodigo = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/nuevaventa.css" asp-append-version="true" />
+}
+
+<form id="frmCajaCerrar" method="post" action="@Url.Action("CajaCerrar","Ventas")" class="mh vd vd--md">
+    <input type="hidden" name="IdCaja" value="@Model.IdCaja" />
+    <input type="hidden" id="hidEsperado" value="@esperado.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" />
+    <input type="hidden" id="hidPend" value="@Model.EgresosPendientes" />
+    <input type="hidden" name="IdUsuarioCierre" value="@userIdCodigo" />
+
+    <!-- Contenido scrollable -->
+    <div class="mh-scroll">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">Cierre de caja</h5>
+        </div>
+
+        <!-- Bloque 1 -->
+        <section class="vd-sec mb-2">
+            <div class="row g-2">
+                <div class="col-6 col-md-3">
+                    <label class="form-label">N° Caja</label>
+                    <input class="form-control" value="@Model.IdCaja" readonly />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Tienda</label>
+                    <input class="form-control" value="@Model.IdTienda" readonly />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Usuario apertura</label>
+                    <input class="form-control" value="@Model.IdUsuarioApertura" readonly />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Fecha apertura</label>
+                    <input class="form-control" value="@Model.FechaApertura.ToString("yyyy-MM-dd HH:mm")" readonly />
+                </div>
+            </div>
+        </section>
+
+        <!-- Bloque 2 -->
+        <section class="vd-sec mb-2">
+            <div class="row g-2">
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Monto apertura</label>
+                    <input class="form-control" value="@Model.MontoApertura.ToString("0.00")" readonly />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Ingresos efectivo</label>
+                    <input class="form-control" value="@Model.TotalIngresosEfectivo.ToString("0.00")" readonly />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label">Gastos autorizados</label>
+                    <input class="form-control" value="@Model.TotalGastosEfectivoAut.ToString("0.00")" readonly />
+                </div>
+            </div>
+
+            @if (Model.EgresosPendientes > 0)
+            {
+                <div class="alert alert-warning mt-2 mb-0">
+                    Hay <b>@Model.EgresosPendientes</b> egresos en <b>EFECTIVO</b> pendientes. No se puede cerrar la caja.
+                </div>
+            }
+        </section>
+
+        <!-- Bloque 3 -->
+        <section class="vd-sec mb-0">
+            <div class="fw-bold text-uppercase small mb-2">Cierre de caja</div>
+            <div class="row g-2">
+                <div class="col-6 col-md-4">
+                    <label class="form-label">DEBE HABER (S/)</label>
+                    <input id="txtDebeHaber" class="form-control" value="@esperado.ToString("0.00")" readonly />
+                </div>
+                <div class="col-6 col-md-4">
+                    <label class="form-label">CONTEO (S/)</label>
+                    <input class="form-control" id="inpReal" name="EfectivoReal" autocomplete="off" inputmode="decimal" />
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label d-flex justify-content-between">
+                        <span id="estadoPill" class="crx-chip d-none"></span>
+                    </label>
+                    <input id="txtEstado" class="form-control" readonly />
+                </div>
+                <div class="col-12">
+                    <textarea id="txtNota" name="Observacion" class="form-control" rows="2" placeholder="Comentario adicional..."></textarea>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer fijo -->
+    <div class="mh-footer d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-secondary" data-modal-close>Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="btnCerrarCaja">Cerrar caja</button>
+    </div>
+
+    <!-- Confirmación siempre debajo del footer -->
+    <div id="cajaConfirm" class="mt-2"></div>
+</form>
+
+<script>
+    /* validación ligera de decimales */
+    (() => {
+      const f = document.getElementById('frmCajaCerrar');
+      if(!f) return;
+      f.addEventListener('submit', (e)=>{
+        const raw = (f.querySelector('#inpReal').value || '').replace(',','.');
+        if(!/^\d+(\.\d{1,2})?$/.test(raw)) {
+          e.preventDefault();
+          alert('Efectivo contado inválido (usa punto y hasta 2 decimales).');
+        }
+      });
+    })();
+</script>

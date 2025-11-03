@@ -59,7 +59,7 @@ namespace SYJBD.Models
         [NotMapped]
         public string Estado =>
             string.IsNullOrWhiteSpace(Observacion)
-                ? (EstaAbierta ? "CAJA ABIERTA" : "—")
+                ? EstaAbierta ? "CAJA ABIERTA" : "—"
                 : Observacion!.Trim();
     }
 }
