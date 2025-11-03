@@ -22,7 +22,7 @@ builder.Services.AddDbContext<ErpDbContext>(opt =>
 });
 
 // ----------------------------------------------------
-// 2) MVC con pol韙ica global de autorizaci髇
+// 2) MVC con pol铆tica global de autorizaci贸n
 // ----------------------------------------------------
 builder.Services.AddControllersWithViews(options =>
 {
@@ -33,7 +33,7 @@ builder.Services.AddControllersWithViews(options =>
 });
 
 // ----------------------------------------------------
-// 3) Autenticaci髇 por Cookies
+// 3) Autenticaci贸n por Cookies
 // ----------------------------------------------------
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(opt =>
@@ -49,7 +49,7 @@ builder.Services.AddHttpContextAccessor();
 
 
 // ----------------------------------------------------
-// 4) Inyecci髇 de dependencias
+// 4) Inyecci贸n de dependencias
 // ----------------------------------------------------
 builder.Services.AddScoped<UsersRepository>();
 builder.Services.AddScoped<AuthService>();
@@ -85,9 +85,9 @@ app.MapControllerRoute(
     name: "app",
     pattern: "app/{controller=Ventas}/{action=PuntoDeVenta}/{id?}");
 
-// WEBSITE por defecto ("/")
+// Ruta por defecto hacia la pantalla de inicio de sesi贸n
 app.MapControllerRoute(
-    name: "website",
-    pattern: "{controller=Website}/{action=Index}/{id?}");
+    name: "default",
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
 
 app.Run();

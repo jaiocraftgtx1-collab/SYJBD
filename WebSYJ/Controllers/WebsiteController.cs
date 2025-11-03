@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-[AllowAnonymous]                       // <- imprescindible
+namespace WebSYJ.Controllers;
+
+[AllowAnonymous]
 public class WebsiteController : Controller
 {
     public IActionResult Index()
