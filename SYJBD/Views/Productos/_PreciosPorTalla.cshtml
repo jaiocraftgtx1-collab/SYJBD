@@ -1,19 +1,20 @@
-﻿@using SYJBD.Services
+@using SYJBD.Services
 @model IReadOnlyList<ProductoTallaPrecioVM>
 
 @{
     var idProd = (int)(ViewBag.IdProducto ?? 0);
     var nomProd = (string)(ViewBag.NombreProducto ?? "");
+    var formatos = ViewBag.ImpresionFormatos as IReadOnlyList<BarcodeLayoutDefinition> ?? Array.Empty<BarcodeLayoutDefinition>();
+    var impresoras = ViewBag.ImpresionImpresoras as IReadOnlyList<BarcodePrinterOption> ?? Array.Empty<BarcodePrinterOption>();
+    var abrirImpresion = (bool)(ViewBag.ImpresionAbierta ?? false);
 }
 
-<!-- Anti-forgery + IdProducto -->
 <form id="js-anti">
     @Html.AntiForgeryToken()
     <input type="hidden" id="js-id-producto" value="@idProd" />
 </form>
 
 <style>
-    /* ======= Contenedor ======= */
     .pp-wrap {
         --pp-max: 860px;
         --pp-pad-x: 5px;
@@ -26,18 +27,14 @@
         box-shadow: 0 24px 48px rgba(16,24,40,.08);
     }
 
-    /* ======= Cabecera (estática, NO sticky) ======= */
     .pp-head {
         padding: 16px var(--pp-pad-x) 8px;
         border-bottom: 1px solid #eef1f6;
-    }
-
-    .pp-title {
-        margin: 0 0 6px 0;
-        font-weight: 700;
-        font-size: 1rem;
-        color: #0b1225;
-        line-height: 1.25;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-start;
+        justify-content: space-between;
     }
 
     .pp-meta {
@@ -46,7 +43,6 @@
         flex-wrap: wrap;
         align-items: center;
         margin-bottom: 8px;
-
     }
 
     .pp-chip {
@@ -66,16 +62,111 @@
         color: #7a8699;
     }
 
-    /* ======= Tabla / filas ======= */
+    .pp-print-toggle {
+        border: 1px solid #d5dbe8;
+        background: #f7f9fc;
+        color: #0b1225;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: .45rem .9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        cursor: pointer;
+    }
+
+    .pp-print-toggle:hover {
+        background: #eef1f6;
+    }
+
+    .pp-print-toggle.is-active {
+        border-color: #7aa7ff;
+        background: rgba(90,145,255,.16);
+        color: #1b4acb;
+    }
+
+    .pp-print-panel {
+        padding: 16px var(--pp-pad-x) 8px;
+        border-bottom: 1px solid #eef1f6;
+        display: grid;
+        gap: 12px;
+    }
+
+    .pp-print-panel[hidden] {
+        display: none !important;
+    }
+
+    .pp-print-form {
+        display: grid;
+        gap: 12px;
+    }
+
+    .pp-print-row {
+        display: grid;
+        gap: 8px;
+    }
+
+    .pp-print-row.inline {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+    }
+
+    .pp-print-row label {
+        font-size: .82rem;
+        font-weight: 600;
+        color: #465066;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+    }
+
+    .pp-print-row select,
+    .pp-print-row input[type="number"] {
+        height: 40px;
+        border-radius: 10px;
+        border: 1px solid #d5dbe8;
+        padding: .35rem .6rem;
+        outline: none;
+        font-size: .96rem;
+        background: #fff;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .pp-print-row select:focus,
+    .pp-print-row input[type="number"]:focus {
+        border-color: #7aa7ff;
+        box-shadow: 0 0 0 4px rgba(90,145,255,.18);
+    }
+
+    .pp-print-submit {
+        display: flex;
+        justify-content: flex-start;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .pp-print-submit button {
+        border: 1px solid #0d6efd;
+        background: #0d6efd;
+        color: #fff;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: .45rem 1.2rem;
+    }
+
+    .pp-print-feedback {
+        font-size: .85rem;
+        color: #0b1225;
+    }
+
     .pp-table-wrap {
         padding: 8px var(--pp-pad-x) 16px;
     }
 
     table.pp-table {
         width: 100%;
-        table-layout: fixed; /* fija 1ª y 3ª col; la central se adapta */
+        table-layout: fixed;
         border-collapse: separate;
-        border-spacing: 0 var(--pp-gap-y); /* “cards” verticales */
+        border-spacing: 0 var(--pp-gap-y);
     }
 
     .pp-td {
@@ -86,18 +177,16 @@
         vertical-align: middle;
     }
 
-        /* Col 1: TALLA (pastilla gris clarito) */
-        .pp-td:first-child {
-            width: 84px; /* desktop */
-            background: #eef1f6;
-            color: #0b1225;
-            text-align: center;
-            font-weight: 700;
-            letter-spacing: .02em;
-            border-color: #eef1f6;
-        }
+    .pp-td:first-child {
+        width: 84px;
+        background: #eef1f6;
+        color: #0b1225;
+        text-align: center;
+        font-weight: 700;
+        letter-spacing: .02em;
+        border-color: #eef1f6;
+    }
 
-    /* Col 2: PRECIO */
     .pp-price input[type="text"] {
         width: 100%;
         height: 40px;
@@ -111,12 +200,11 @@
         background: #fff;
     }
 
-        .pp-price input[type="text"]:focus {
-            border-color: #7aa7ff;
-            box-shadow: 0 0 0 4px rgba(90,145,255,.18);
-        }
+    .pp-price input[type="text"]:focus {
+        border-color: #7aa7ff;
+        box-shadow: 0 0 0 4px rgba(90,145,255,.18);
+    }
 
-    /* Col 3: ACCIÓN */
     .pp-actions {
         display: flex;
         justify-content: flex-start;
@@ -133,22 +221,20 @@
         white-space: nowrap;
     }
 
-        .pp-btn[disabled] {
-            opacity: .55;
-            cursor: not-allowed;
-        }
+    .pp-btn[disabled] {
+        opacity: .55;
+        cursor: not-allowed;
+    }
 
-    /* Selección visible al enfocar */
     .sel-all::selection {
         background: #cfe4ff;
     }
 
-    /* ======= Responsive ======= */
-    @@media (max-width: 1024px) {
+    @media (max-width: 1024px) {
         .pp-td:first-child {
             width: 76px;
         }
-        /* tallas algo más compactas */
+
         .pp-price input[type="text"] {
             height: 36px;
             font-size: .95rem;
@@ -158,67 +244,109 @@
             padding: .32rem .62rem;
         }
 
-        .pp-td:nth-child(1) {
-            width: 40px
-        }
-
-        .pp-td:nth-child(2) {
-            width: 150px
-        }
-
-        .pp-td:nth-child(3) {
-            width: 30px
+        .pp-print-row.inline {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         }
     }
 
-    @@media (max-width: 430px) {
+    @media (max-width: 430px) {
         .pp-head {
             padding: 12px var(--pp-pad-x) 6px;
+            flex-direction: column;
+            align-items: stretch;
         }
 
-        .pp-title {
-            font-size: .96rem;
+        .pp-print-toggle {
+            justify-content: center;
         }
 
         .pp-td {
             padding: 6px;
         }
 
-            .pp-td:first-child {
-                width: 64px;
-                font-size: .92rem;
-            }
+        .pp-td:first-child {
+            width: 64px;
+            font-size: .92rem;
+        }
 
         .pp-btn {
             padding: .28rem .56rem;
             font-size: .84rem;
         }
-
-        .pp-td:nth-child(1) {
-            width: 70px
-        }
-
-        .pp-td:nth-child(2) {
-            width: 120px
-        }
-
-        .pp-td:nth-child(3) {
-            width: 80px
-        }
-
-
-
     }
-
 </style>
 
 <div class="pp-wrap">
     <div class="pp-head">
-        <div class="pp-meta">
-            <span class="pp-chip">@nomProd</span>
-            <span class="pp-chip">#@idProd</span>
+        <div>
+            <div class="pp-meta">
+                <span class="pp-chip">@nomProd</span>
+                <span class="pp-chip">#@idProd</span>
+            </div>
+            <p class="pp-hint">Ingresa los precios y pulsa <strong>Guardar</strong> por fila. Formato: <code>0.00</code></p>
         </div>
-        <p class="pp-hint">Ingresa los precios y pulsa <strong>Guardar</strong> por fila. Formato: <code>0.00</code></p>
+        <button type="button" id="pp-print-toggle" class="pp-print-toggle @(abrirImpresion ? "is-active" : "")">
+            <i class="bi bi-upc-scan"></i>
+            Imprimir códigos
+        </button>
+    </div>
+
+    <div id="pp-print-panel" class="pp-print-panel" @(abrirImpresion ? null : new { hidden = "hidden" })>
+        <form id="js-print-form" class="pp-print-form">
+            <div class="pp-print-row">
+                <label for="pp-talla">Talla a imprimir</label>
+                <select id="pp-talla" name="IdProductoTalla" required>
+                    <option value="">Selecciona una talla…</option>
+                    @foreach (var it in Model)
+                    {
+                        <option value="@it.IdProductoTalla">
+                            @it.IdTalla (@it.IdProductoTalla)
+                        </option>
+                    }
+                </select>
+            </div>
+
+            <div class="pp-print-row inline">
+                <div>
+                    <label for="pp-formato">Formato / papel</label>
+                    <select id="pp-formato" name="FormatoId" required>
+                        <option value="">Selecciona…</option>
+                        @foreach (var formato in formatos)
+                        {
+                            <option value="@formato.Id" data-width="@formato.WidthMm" data-height="@formato.HeightMm">
+                                @formato.DisplayName
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label for="pp-impresora">Impresora</label>
+                    <select id="pp-impresora" name="Impresora">
+                        <option value="">(Selecciona en el cuadro de impresión)</option>
+                        @foreach (var imp in impresoras)
+                        {
+                            <option value="@imp.Id">@imp.DisplayName</option>
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label for="pp-copias">Copias</label>
+                    <input type="number" id="pp-copias" name="Copias" min="1" max="500" value="1" required />
+                </div>
+            </div>
+
+            <div class="pp-print-submit">
+                <button type="submit">
+                    <i class="bi bi-printer-fill"></i> Abrir vista de impresión
+                </button>
+                <div id="pp-print-feedback" class="pp-print-feedback" role="status"></div>
+            </div>
+            <p class="pp-hint" style="margin: 0;">
+                La impresión se realiza con el cuadro del navegador. Verifica el formato, escala 100% y selecciona la impresora adecuada.
+            </p>
+        </form>
     </div>
 
     <div class="pp-table-wrap">
@@ -226,9 +354,8 @@
             <tbody>
                 @foreach (var it in Model)
                 {
-                    <tr data-talla="@it.IdTalla">
+                    <tr data-talla="@it.IdTalla" data-prod-talla="@it.IdProductoTalla">
                         <td class="pp-td">@it.IdTalla</td>
-
                         <td class="pp-td">
                             <div class="pp-price">
                                 <input type="text"
@@ -239,7 +366,6 @@
                                        aria-label="Precio para la talla @it.IdTalla" />
                             </div>
                         </td>
-
                         <td class="pp-td">
                             <div class="pp-actions">
                                 <button type="button" class="pp-btn js-save">Guardar</button>
@@ -251,3 +377,72 @@
         </table>
     </div>
 </div>
+
+<script>
+    (function () {
+        const toggle = document.getElementById('pp-print-toggle');
+        const panel = document.getElementById('pp-print-panel');
+        const form = document.getElementById('js-print-form');
+        const feedback = document.getElementById('pp-print-feedback');
+        const idProducto = Number(document.getElementById('js-id-producto')?.value || 0);
+
+        if (toggle) {
+            toggle.addEventListener('click', () => {
+                const hidden = panel.hasAttribute('hidden');
+                if (hidden) {
+                    panel.removeAttribute('hidden');
+                    toggle.classList.add('is-active');
+                } else {
+                    panel.setAttribute('hidden', 'hidden');
+                    toggle.classList.remove('is-active');
+                }
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', (ev) => {
+                ev.preventDefault();
+                if (!idProducto) {
+                    feedback.textContent = 'No se pudo determinar el producto.';
+                    feedback.style.color = '#b42318';
+                    return;
+                }
+
+                const fd = new FormData(form);
+                const idProductoTalla = fd.get('IdProductoTalla');
+                const formatoId = fd.get('FormatoId');
+                const impresora = fd.get('Impresora');
+                const copias = Number(fd.get('Copias') || 0);
+
+                if (!idProductoTalla || !formatoId || !copias) {
+                    feedback.textContent = 'Completa los campos requeridos.';
+                    feedback.style.color = '#b42318';
+                    return;
+                }
+
+                const params = new URLSearchParams({
+                    idProducto: String(idProducto),
+                    idProductoTalla: String(idProductoTalla),
+                    formatoId: String(formatoId),
+                    copias: String(Math.max(1, Math.min(500, copias)))
+                });
+
+                if (impresora) {
+                    params.append('impresora', String(impresora));
+                }
+
+                const url = `/Productos/ImpresionEtiquetas?${params.toString()}`;
+                const printWindow = window.open(url, '_blank', 'noopener');
+
+                if (!printWindow) {
+                    feedback.textContent = 'Permite las ventanas emergentes para continuar.';
+                    feedback.style.color = '#b42318';
+                    return;
+                }
+
+                feedback.textContent = 'Vista de impresión abierta en una nueva pestaña.';
+                feedback.style.color = '#1f7a4d';
+            });
+        }
+    })();
+</script>

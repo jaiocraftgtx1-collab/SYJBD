@@ -22,7 +22,7 @@ builder.Services.AddDbContext<ErpDbContext>(opt =>
 });
 
 // ----------------------------------------------------
-// 2) MVC con política global de autorización
+// 2) MVC con polÃ­tica global de autorizaciÃ³n
 // ----------------------------------------------------
 builder.Services.AddControllersWithViews(options =>
 {
@@ -33,7 +33,7 @@ builder.Services.AddControllersWithViews(options =>
 });
 
 // ----------------------------------------------------
-// 3) Autenticación por Cookies
+// 3) AutenticaciÃ³n por Cookies
 // ----------------------------------------------------
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(opt =>
@@ -49,7 +49,10 @@ builder.Services.AddHttpContextAccessor();
 
 
 // ----------------------------------------------------
-// 4) Inyección de dependencias
+builder.Services.Configure<BarcodeLayoutOptions>(
+    builder.Configuration.GetSection("BarcodePrinting"));
+builder.Services.AddSingleton<IBarcodeLayoutService, BarcodeLayoutService>();
+// 4) InyecciÃ³n de dependencias
 // ----------------------------------------------------
 builder.Services.AddScoped<UsersRepository>();
 builder.Services.AddScoped<AuthService>();
