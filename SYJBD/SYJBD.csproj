@@ -19,6 +19,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Modulo_Producción\Controllers\" />
+    <Folder Include="Modulo_Producción\Models\" />
+    <Folder Include="Modulo_Producción\Services\" />
+    <Folder Include="Modulo_Producción\Views\" />
+    <Folder Include="Modulo_Inventario\Controllers\" />
+    <Folder Include="Modulo_Inventario\Models\" />
+    <Folder Include="Modulo_Inventario\Services\" />
+    <Folder Include="Modulo_Inventario\Views\" />
     <Folder Include="Properties\ServiceDependencies\SYJBD20250928180945 - Zip Deploy\" />
     <Folder Include="wwwroot\website\img\logo\" />
     <Folder Include="wwwroot\website\img\productos\" />

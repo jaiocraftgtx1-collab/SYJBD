@@ -82,12 +82,13 @@ Rotativa.AspNetCore.RotativaConfiguration.Setup(app.Environment.WebRootPath);
 
 // APP (si la quieres con prefijo /app)
 app.MapControllerRoute(
-    name: "app",
-    pattern: "app/{controller=Ventas}/{action=PuntoDeVenta}/{id?}");
+    name: "website",
+    pattern: "{controller=Auth}/{action=Login}/{id?}");
+
 
 // WEBSITE por defecto ("/")
-app.MapControllerRoute(
-    name: "website",
-    pattern: "{controller=Website}/{action=Index}/{id?}");
+//app.MapControllerRoute(
+//name: "website",
+//pattern: "{controller=Website}/{action=Index}/{id?}");
 
 app.Run();

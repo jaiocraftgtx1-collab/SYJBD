@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-[AllowAnonymous]                       // <- imprescindible
+[AllowAnonymous]
 public class WebsiteController : Controller
 {
-    public IActionResult Index()
-    {
-        ViewData["Title"] = "Inicio";
-        return View();
-    }
+    [AllowAnonymous]
+    public IActionResult Index() => View();
+
+    [AllowAnonymous]
+    public IActionResult Contacto() => View();
+
+    // cualquier otra acción pública…
 }

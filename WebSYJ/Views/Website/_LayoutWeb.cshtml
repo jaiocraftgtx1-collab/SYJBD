@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@(ViewData["Title"] ?? "S&J STYLE")</title>
 
-    <link rel="stylesheet" href="~/website/css/base.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/website/css/layout.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/website/css/components.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/base.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/layout.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/components.css" asp-append-version="true" />
 </head>
 
 
@@ -64,7 +64,7 @@
     <main class="syj-main">
         @RenderBody()
     </main>
-    <script src="~/website/js/main.js" asp-append-version="true"></script>
+    <script src="~/js/main.js" asp-append-version="true"></script>
 
     @await Html.PartialAsync("Partials/_FooterWeb")
 
