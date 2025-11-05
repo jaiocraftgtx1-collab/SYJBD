@@ -1,0 +1,240 @@
+@model SYJBD.Models.BarcodePrintPageVM
+@using System.Globalization
+@{
+    Layout = null;
+    var detalle = Model.Detalle;
+    var layout = Model.Layout;
+    var hasError = !string.IsNullOrWhiteSpace(Model.ErrorMessage) || detalle == null || layout == null;
+    var copias = Math.Max(1, Model.Copias);
+    var width = layout?.WidthMm ?? 50;
+    var height = layout?.HeightMm ?? 30;
+    var gapH = layout?.HorizontalGapMm ?? 0;
+    var gapV = layout?.VerticalGapMm ?? 0;
+    var widthCss = width.ToString("0.##", CultureInfo.InvariantCulture);
+    var heightCss = height.ToString("0.##", CultureInfo.InvariantCulture);
+    var gapHCss = gapH.ToString("0.##", CultureInfo.InvariantCulture);
+    var gapVCss = gapV.ToString("0.##", CultureInfo.InvariantCulture);
+    var impresora = string.IsNullOrWhiteSpace(Model.ImpresoraNombre) ? null : Model.ImpresoraNombre;
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Etiquetas @detalle?.Nombre</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 1.2rem;
+            background: #f5f5f5;
+            color: #0b1225;
+        }
+
+        .sheet-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .sheet-meta h1 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        .sheet-meta .actions {
+            display: inline-flex;
+            gap: .75rem;
+            align-items: center;
+        }
+
+        .sheet-meta button {
+            background: #0d6efd;
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            padding: .45rem 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .sheet-meta .hint {
+            font-size: .85rem;
+            color: #475467;
+        }
+
+        .error-box {
+            border: 1px solid #f5c2c7;
+            background: #f8d7da;
+            color: #842029;
+            padding: 1rem;
+            border-radius: 12px;
+        }
+
+        @page {
+            size: @(widthCss)mm @(heightCss)mm;
+            margin: 0;
+        }
+
+        .preview {
+            background: #fff;
+            border-radius: 16px;
+            padding: 1.2rem;
+            box-shadow: 0 16px 32px rgba(15, 23, 42, .12);
+        }
+
+        .labels {
+            display: grid;
+            grid-template-columns: repeat(@(layout?.Columns ?? 1), @(widthCss)mm);
+            gap: @(gapVCss)mm @(gapHCss)mm;
+            justify-content: flex-start;
+        }
+
+        .label {
+            width: @(widthCss)mm;
+            height: @(heightCss)mm;
+            border: 1px solid #d5dbe8;
+            border-radius: 8px;
+            padding: .35rem .4rem .2rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .label .title {
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+            color: #111827;
+            margin-bottom: .15rem;
+        }
+
+        .label .barcode {
+            flex: 1;
+            width: 100%;
+        }
+
+        .label .meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: .68rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .label .meta .size {
+            font-size: .72rem;
+        }
+
+        @media print {
+            body {
+                background: transparent;
+                padding: 0;
+            }
+
+            .sheet-meta,
+            .preview {
+                margin: 0;
+                box-shadow: none;
+                border-radius: 0;
+            }
+
+            .sheet-meta {
+                display: none !important;
+            }
+
+            .labels {
+                gap: @(gapVCss)mm @(gapHCss)mm;
+            }
+
+            .label {
+                border: none;
+                border-radius: 0;
+                padding: .2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="sheet-meta">
+        <div>
+            <h1>@(detalle?.Nombre ?? "Etiquetas")</h1>
+            <div class="hint">
+                Formato: @(layout?.DisplayName ?? "-") · Dimensiones: @widthCss mm × @heightCss mm · Copias: @copias
+                @if (!string.IsNullOrWhiteSpace(layout?.Description))
+                {
+                    <span>· @layout?.Description</span>
+                }
+                @if (!string.IsNullOrEmpty(impresora))
+                {
+                    <span>· Impresora sugerida: @impresora</span>
+                }
+            </div>
+        </div>
+        <div class="actions">
+            <button type="button" onclick="window.print()">Imprimir</button>
+            <span class="hint">Ajusta la escala al 100% en el cuadro de impresión.</span>
+        </div>
+    </div>
+
+    @if (hasError)
+    {
+        <div class="error-box">
+            <strong>No se puede generar la vista de impresión.</strong>
+            <div>@(Model.ErrorMessage ?? "Revisa los datos seleccionados e inténtalo nuevamente.")</div>
+        </div>
+    }
+    else if (detalle != null && layout != null)
+    {
+        <div class="preview">
+            <div class="labels">
+                @for (var i = 0; i < copias; i++)
+                {
+                    <div class="label">
+                        <div class="title">@detalle.Nombre</div>
+                        <svg class="barcode" id="barcode-@i" data-code="@detalle.IdProductoTalla"></svg>
+                        <div class="meta">
+                            <span class="size">Talla: @detalle.IdTalla</span>
+                            <span>#@detalle.IdProducto</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js" integrity="sha384-L3ItxuxMxDPZWS9Vyuk3F7S8wP/6MBG79NFs8p8/saMtASQcPEVXFMdxOFMuqr9q" crossorigin="anonymous"></script>
+    <script>
+        (function () {
+            if (@(hasError ? "true" : "false")) {
+                return;
+            }
+
+            const labels = document.querySelectorAll('.barcode');
+            labels.forEach((el) => {
+                const value = el.getAttribute('data-code') || '';
+                if (!value) {
+                    return;
+                }
+
+                JsBarcode(el, value, {
+                    format: 'code128',
+                    displayValue: false,
+                    margin: 0,
+                    height: 34
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

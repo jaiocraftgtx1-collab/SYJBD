@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System;
+using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SYJBD.Data;
@@ -12,10 +14,12 @@ namespace SYJBD.Controllers
     {
         private readonly ErpDbContext _db;
         private readonly IProductosService _svc;
-        public ProductosController(ErpDbContext db, IProductosService svc)
+        private readonly IBarcodeLayoutService _barcodeLayouts;
+        public ProductosController(ErpDbContext db, IProductosService svc, IBarcodeLayoutService barcodeLayouts)
         {
             _db = db;
             _svc = svc;
+            _barcodeLayouts = barcodeLayouts;
         }
 
         public async Task<IActionResult> Index(string? q, int page = 1, int pageSize = 10)
@@ -91,7 +95,50 @@ namespace SYJBD.Controllers
 
             // OJO: acá usa _svc (tu servicio inyectado), no _productosService
             var modelo = await _svc.GetTallasPreciosAsync(prod.IdProducto, ct);
+
+            ViewBag.ImpresionFormatos = _barcodeLayouts.GetLayouts();
+            ViewBag.ImpresionImpresoras = _barcodeLayouts.GetPrinters();
+            ViewBag.ImpresionAbierta = string.Equals(
+                Request.Query["view"],
+                "print",
+                StringComparison.OrdinalIgnoreCase);
+
             return PartialView("_PreciosPorTalla", modelo);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ImpresionEtiquetas(int idProducto, string idProductoTalla, string formatoId, int copias = 1, string? impresora = null, CancellationToken ct = default)
+        {
+            var vm = new BarcodePrintPageVM
+            {
+                Copias = Math.Max(1, Math.Min(500, copias)),
+                ImpresoraId = impresora
+            };
+
+            var layout = _barcodeLayouts.FindLayout(formatoId);
+            if (layout == null)
+            {
+                vm.ErrorMessage = "No se encontro el formato de etiqueta solicitado.";
+                return View("ImpresionEtiquetas", vm);
+            }
+
+            vm.Layout = layout;
+
+            var detalle = await _svc.GetProductoTallaAsync(idProducto, idProductoTalla, ct);
+            if (detalle == null)
+            {
+                vm.ErrorMessage = "No se encontro la talla seleccionada para este producto.";
+                return View("ImpresionEtiquetas", vm);
+            }
+
+            vm.Detalle = detalle;
+
+            var printer = _barcodeLayouts.GetPrinters()
+                .FirstOrDefault(p => string.Equals(p.Id, impresora, StringComparison.OrdinalIgnoreCase));
+
+            vm.ImpresoraNombre = printer?.DisplayName ?? impresora ?? string.Empty;
+
+            return View("ImpresionEtiquetas", vm);
         }
 
         // ======= POST: ACTUALIZAR PRECIO =======
