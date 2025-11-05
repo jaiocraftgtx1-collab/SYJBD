@@ -91,7 +91,7 @@ namespace SYJBD.Services
 
             using var cmd = cn.CreateCommand();
             cmd.CommandText = $@"
-SELECT pt.id_producto, pt.id_talla, COALESCE(pt.costo,0), COALESCE(pt.precio,0)
+SELECT pt.id_producto, pt.id_talla, pt.id_prod_talla, COALESCE(pt.costo,0), COALESCE(pt.precio,0)
 FROM vta_producto_talla pt
 WHERE pt.id_producto = @id
 ORDER BY
@@ -106,11 +106,48 @@ ORDER BY
                 {
                     IdProducto = rd.GetInt32(0),
                     IdTalla = S(rd, 1) ?? "",
-                    Costo = D(rd, 2),
-                    Precio = D(rd, 3)
+                    IdProductoTalla = S(rd, 2) ?? "",
+                    Costo = D(rd, 3),
+                    Precio = D(rd, 4)
                 });
             }
+
             return list;
+        }
+
+        public async Task<ProductoTallaEtiquetaVM?> GetProductoTallaAsync(int idProducto, string idProductoTalla, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(idProductoTalla))
+            {
+                return null;
+            }
+
+            var cn = (MySqlConnection)_db.Database.GetDbConnection();
+            await EnsureOpenAsync(cn, ct);
+
+            using var cmd = cn.CreateCommand();
+            cmd.CommandText = @"
+SELECT p.id_producto, COALESCE(p.nombre,''), pt.id_talla, pt.id_prod_talla
+FROM vta_producto p
+INNER JOIN vta_producto_talla pt ON pt.id_producto = p.id_producto
+WHERE p.id_producto = @id AND pt.id_prod_talla = @ipt
+LIMIT 1;";
+            cmd.Parameters.AddWithValue("@id", idProducto);
+            cmd.Parameters.AddWithValue("@ipt", idProductoTalla.Trim());
+
+            using var rd = await cmd.ExecuteReaderAsync(ct);
+            if (await rd.ReadAsync(ct))
+            {
+                return new ProductoTallaEtiquetaVM
+                {
+                    IdProducto = rd.GetInt32(0),
+                    Nombre = S(rd, 1) ?? string.Empty,
+                    IdTalla = S(rd, 2) ?? string.Empty,
+                    IdProductoTalla = S(rd, 3) ?? string.Empty
+                };
+            }
+
+            return null;
         }
 
         // 3) Actualizar SOLO el precio

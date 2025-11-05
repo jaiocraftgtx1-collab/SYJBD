@@ -62,10 +62,17 @@
                                 <span class="badge @(ok ? "ok" : "danger")">@estado</span>
                             </td>
                             <td class="ta-right">
-                                <a class="btn btn-sm btn-outline-primary"
-                                   data-modal-url="@Url.Action("EditarPrecios", "Productos", new { id = p.IdProducto })">
-                                    <i class="bi bi-currency-dollar"></i> $ ASIG. PRECIOS.
-                                </a>
+                                <div class="btn-group">
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       data-modal-url="@Url.Action("EditarPrecios", "Productos", new { id = p.IdProducto })">
+                                        <i class="bi bi-currency-dollar"></i> $ ASIG. PRECIOS.
+                                    </a>
+                                    <a class="btn btn-sm btn-outline-secondary"
+                                       data-modal-url="@Url.Action("EditarPrecios", "Productos", new { id = p.IdProducto, view = "print" })"
+                                       title="Imprimir códigos de barras">
+                                        <i class="bi bi-upc-scan"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -137,6 +144,20 @@
             line-height: 1.2;
         }
 
+        }
+
+        .table .btn-group {
+            display: inline-flex;
+            gap: .35rem;
+        }
+
+        .table .btn-group .btn.btn-outline-secondary {
+            color: #0b1225;
+            border-color: #d5dbe8;
+        }
+
+        .table .btn-group .btn.btn-outline-secondary:hover {
+            background: #eef1f6;
         }
 
         /* Optional: en pantallas muy anchas, damos un poco más a “Acciones” */

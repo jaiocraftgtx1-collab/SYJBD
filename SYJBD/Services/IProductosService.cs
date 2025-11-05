@@ -12,6 +12,9 @@ namespace SYJBD.Services
         Task<IReadOnlyList<ProductoTallaPrecioVM>> GetTallasPreciosAsync(
             int idProducto, CancellationToken ct = default);
 
+        Task<ProductoTallaEtiquetaVM?> GetProductoTallaAsync(
+            int idProducto, string idProductoTalla, CancellationToken ct = default);
+
         Task<(bool Ok, string Msg)> ActualizarPrecioAsync(
             int idProducto, string idTalla, decimal precio, CancellationToken ct = default);
     }
@@ -29,8 +32,17 @@ namespace SYJBD.Services
     {
         public int IdProducto { get; set; }
         public string IdTalla { get; set; } = "";
+        public string IdProductoTalla { get; set; } = "";
         public decimal Costo { get; set; }
         public decimal Precio { get; set; }
+    }
+
+    public sealed class ProductoTallaEtiquetaVM
+    {
+        public int IdProducto { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string IdTalla { get; set; } = string.Empty;
+        public string IdProductoTalla { get; set; } = string.Empty;
     }
 
 }
